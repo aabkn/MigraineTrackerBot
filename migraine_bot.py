@@ -3,22 +3,22 @@ import telebot
 import db
 from datetime import date
 import os
+import keyboards
 
 
 bot = telebot.TeleBot(token, parse_mode=None)
 db = db.Database()
-remove_keyboard = telebot.types.ReplyKeyboardRemove(selective=False)
-
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
     msg = bot.reply_to(message, "Hey, I am a bot for tracking migraines! Here is the list of "
-                                "the possible commands:\n/log: to log a running attack"
-                                "\n/cancel: to cancel a logging"
-                                "\n/edit: to edit a logged attack"
-                                "\n/get_stats: to get .csv file of logged attacks"
-                                "\n/help: get list of possible commands"
-                                "\nNow let's know each other. What's your name?", reply_markup=remove_keyboard)
+                                "the possible commands:\n/log - log a running attack"
+                                "\n/cancel - cancel a logging"
+                                "\n/edit - edit a logged attack"
+                                "\n/get_stats - get .csv file of logged attacks"
+                                "\n/help - get list of possible commands"
+                                "\nNow let's know each other. What's your name?",
+                       reply_markup=keyboards.remove_keyboard)
 
     db.set_state(msg.chat.id, States.WELCOME)
 
@@ -26,11 +26,11 @@ def send_welcome(message):
 @bot.message_handler(commands=['help'])
 def send_help(message):
     msg = bot.reply_to(message, "Hey, I am a bot for tracking migraines! Here is the list of "
-                                "the possible commands:\n/log: to log a running attack"
-                                "\n/cancel: to cancel a logging"
-                                "\n/edit: to edit a logged attack"
-                                "\n/get_stats: to get .csv file of logged attacks"
-                                "\n/help: get list of possible commands")
+                                "the possible commands:\n/log - log a running attack"
+                                "\n/cancel - cancel a logging"
+                                "\n/edit - edit a logged attack"
+                                "\n/get_stats - get .csv file of logged attacks"
+                                "\n/help - get list of possible commands")
 
 
 @bot.message_handler(commands=['cancel'])
@@ -39,13 +39,13 @@ def cancel_log(message):
     state = db.get_state(chat_id)
     if state in [States.INACTIVE, States.WELCOME]:
         bot.reply_to(message, "Nothing to cancel. If you want to log an attack, just use command /log.",
-                     reply_markup=remove_keyboard)
+                     reply_markup=keyboards.remove_keyboard)
         return
 
     db.delete_current_log(chat_id)
     db.set_state(chat_id, States.INACTIVE)
     bot.reply_to(message, "OK, I cancelled this log. If you want to log an attack, just use command /log.",
-                       reply_markup=remove_keyboard)
+                 reply_markup=keyboards.remove_keyboard)
 
 
 
@@ -55,10 +55,10 @@ def start_log(message):
     name = db.get_username(chat_id)
     if db.get_state(chat_id) == States.LOGGING:
         bot.reply_to(message, "I've already started logging. If you want to cancel, just use /cancel.",
-                     reply_markup=remove_keyboard)
+                     reply_markup=keyboards.remove_keyboard)
         return
     bot.reply_to(message, f'Hi, {name}! You logged a migraine attack. \nSorry to hear that! '
-                 f'How would you estimate intensity of the pain from 0 to 10?', reply_markup=remove_keyboard)
+                 f'How would you estimate intensity of the pain from 0 to 10?', reply_markup=keyboards.remove_keyboard)
 
     db.set_step(chat_id, LogStep.INTENSITY)
     db.set_state(chat_id, States.LOGGING)
@@ -81,21 +81,16 @@ def start_edit(message):
     if step == LogStep.FINISH_LOG:
         db.set_state(chat_id, States.EDITING)
         db.fetch_last_log(chat_id)
-        markup = telebot.types.ReplyKeyboardMarkup()
-        item_intensity = telebot.types.KeyboardButton('Intensity')
-        item_location = telebot.types.KeyboardButton('Pain location')
-        item_start = telebot.types.KeyboardButton('Pain start')
-        markup.row(item_intensity)
-        markup.row(item_location, item_start)
         bot.send_message(chat_id, 'What would you like to edit?',
-                         reply_markup=markup)
+                         reply_markup=keyboards.edit_keyboard)
 
     elif step == LogStep.ATTACK_START:
-        bot.send_message(chat_id, 'Ok, let\'s edit the location of pain. Just choose the correct option')
+        bot.send_message(chat_id, 'Ok, let\'s edit the location of pain. Just choose the correct option',
+                         reply_markup=keyboards.location_keyboard)
         db.set_step(chat_id, LogStep.LOCATION)
     elif step == LogStep.LOCATION:
         bot.send_message(chat_id, 'You can now tell a correct value of the pain level from 0 to 10',
-                         reply_markup=remove_keyboard)
+                         reply_markup=keyboards.remove_keyboard)
         db.set_step(chat_id, LogStep.INTENSITY)
 
 
@@ -108,7 +103,7 @@ def edit(message):
     elif step == LogStep.ATTACK_START:
         process_pain_start(message)
     elif step == LogStep.LOCATION:
-        process_intensity(message)
+        process_side(message)
     elif step == LogStep.FINISH_LOG:
         chosen_option = message.text
         if not(chosen_option.lower() in ['intensity', 'pain location', 'pain start', 'side', 'location', 'start']):
@@ -116,14 +111,16 @@ def edit(message):
         else:
             if chosen_option.lower() in ['intensity']:
                 bot.send_message(chat_id, 'You can now tell a correct value of the pain level from 0 to 10',
-                                 reply_markup=remove_keyboard)
+                                 reply_markup=keyboards.remove_keyboard)
                 db.set_step(chat_id, LogStep.INTENSITY)
 
             elif chosen_option.lower() in ['pain location', 'side', 'location']:
-                bot.send_message(chat_id, 'Ok, let\'s edit the location of pain. Just choose the correct option')
+                bot.send_message(chat_id, 'Ok, let\'s edit the location of pain. Just choose the correct option',
+                                 reply_markup=keyboards.location_keyboard)
                 db.set_step(chat_id, LogStep.LOCATION)
             else:
-                bot.send_message(chat_id, 'Now you can edit the start of the attack. Please, choose the correct option')
+                bot.send_message(chat_id, 'Now you can edit the start of the attack. Please, choose the correct option',
+                                 reply_markup=keyboards.pain_start_keyboard)
                 db.set_step(chat_id, LogStep.ATTACK_START)
 
 
@@ -133,7 +130,7 @@ def process_name(message):
     name = message.text
     db.insert_user(chat_id, name)
 
-    bot.reply_to(message, f'Nice to meet you, {name}!', reply_markup=remove_keyboard)
+    bot.reply_to(message, f'Nice to meet you, {name}!', reply_markup=keyboards.remove_keyboard)
     db.set_state(chat_id, States.INACTIVE)
 
 
@@ -158,22 +155,19 @@ def process_intensity(message):
     try:
         intensity_val = float(intensity)
         if intensity_val < 0:
-            bot.reply_to(message, "Please, indicate your pain level from 0 to 10.", reply_markup=remove_keyboard)
+            bot.reply_to(message, "Please, indicate your pain level from 0 to 10.",
+                         reply_markup=keyboards.remove_keyboard)
             return
         if intensity_val > 10:
             bot.reply_to(message, "I am so sorry, that the pain is so strong. \nFor range consistency "
-                         "reasons, please, indicate your pain level from 0 to 10.", reply_markup=remove_keyboard)
+                         "reasons, please, indicate your pain level from 0 to 10.",
+                         reply_markup=keyboards.remove_keyboard)
             return
 
         db.log_migraine(chat_id, {'$set': {'chat_id': chat_id, 'intensity': intensity_val}})
-        markup = telebot.types.ReplyKeyboardMarkup()
-        item_both = telebot.types.KeyboardButton('Both')
-        item_left = telebot.types.KeyboardButton('Left')
-        item_right = telebot.types.KeyboardButton('Right')
-        markup.row(item_both)
-        markup.row(item_left, item_right)
+
         bot.send_message(chat_id, f'Where the pain is located?',
-                         reply_markup=markup)
+                         reply_markup=keyboards.location_keyboard)
         if db.get_state(chat_id) == States.LOGGING:
             db.set_step(chat_id, LogStep.LOCATION)
         else:
@@ -182,7 +176,7 @@ def process_intensity(message):
 
     except ValueError:
         bot.reply_to(message, "I can't interpret your answer as a numeric value. "
-                     "Please, indicate your pain level from 0 to 10.", reply_markup=remove_keyboard)
+                     "Please, indicate your pain level from 0 to 10.", reply_markup=keyboards.remove_keyboard)
 
 
 @bot.message_handler(func=lambda message: db.get_step(message.chat.id) == LogStep.LOCATION)
@@ -195,16 +189,14 @@ def process_side(message):
         return
 
     db.log_migraine(chat_id,{'$set': {'chat_id': chat_id, 'side': side}})
-    markup = telebot.types.ReplyKeyboardMarkup()
-    item_morning = telebot.types.KeyboardButton('Morning')
-    item_day = telebot.types.KeyboardButton('Day')
-    item_evening = telebot.types.KeyboardButton('Evening')
-    item_night = telebot.types.KeyboardButton('Night')
 
-    markup.row(item_morning, item_day)
-    markup.row(item_evening, item_night)
-    bot.reply_to(message, 'I see. When did the pain start?', reply_markup=markup)
-    db.set_step(chat_id, LogStep.ATTACK_START)
+    bot.reply_to(message, 'I see. When did the pain start?', reply_markup=keyboards.pain_start_keyboard)
+
+    if db.get_state(chat_id) == States.LOGGING:
+        db.set_step(chat_id, LogStep.ATTACK_START)
+    else:
+        db.set_step(chat_id, LogStep.FINISH_LOG)
+        print_current_log(message)
     #except Exception as e:
     #    bot.reply_to(message, 'Unknown error')
 
@@ -234,7 +226,7 @@ def print_current_log(message):
               f"\nPain started: {migraine_log['pain_start']}."
     bot.send_message(chat_id, 'Everything is set! Please check the logged data.\n' + message
                      + "\nIf you want to edit the data use the command /edit.",
-                     reply_markup=remove_keyboard)
+                     reply_markup=keyboards.remove_keyboard)
 
     db.set_state(chat_id, States.INACTIVE)
     db.save_log(chat_id)
