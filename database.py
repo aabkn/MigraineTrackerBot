@@ -1,7 +1,7 @@
 import pymongo
 import pandas as pd
 from datetime import date
-from config import mongo_host
+from config.config import mongo_host
 
 
 class Database:
@@ -60,9 +60,24 @@ class Database:
 
         df.drop(columns=['chat_id', '_id'], inplace=True)
         df.sort_values(by='date', inplace=True)
+        df['date'] = df['date'].dt.strftime('%d-%m-%y')
         df.reset_index(drop=True, inplace=True)
 
         username = self.get_username(chat_id)
         filename = f'/tmp/{username}_logs_{date.today().strftime("%d-%m-%Y")}.csv'
         df.to_csv(filename)
         return filename
+
+    def get_stats_month(self, chat_id, month, year):
+        user_logs = self.migraine_logs.find({
+            "$expr": {
+                "$and": [
+                    {'chat_id': chat_id},
+                    {"$eq": [{"$year": "$date"}, year]},
+                    {"$eq": [{"$month": "$date"}, month]}
+                ]
+            }
+        })
+        return user_logs
+
+

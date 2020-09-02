@@ -1,5 +1,6 @@
 import telebot
 import datetime
+import calendar
 
 
 def date_options(date):
@@ -26,5 +27,7 @@ intensity_keyboard = create_keyboard(options=range(1, 11))
 pain_start_keyboard = create_keyboard(options=['Morning', 'Day', 'Evening', 'Night'])
 edit_keyboard = create_keyboard(options=['Intensity', 'Pain location', 'Pain start', 'Date'])
 date_keyboard = create_keyboard(options=date_options(datetime.date.today()))
+month_keyboard = create_keyboard(options=list(calendar.month_abbr)[1:])
+month_keyboard.row('Finish')
 remove_keyboard = telebot.types.ReplyKeyboardRemove(selective=False)
 
