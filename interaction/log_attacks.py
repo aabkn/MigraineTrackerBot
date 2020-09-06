@@ -1,4 +1,4 @@
-from config.config import States, LogStep, attack_start_dict
+from config.config import States, LogStep, attack_start_dict, n_attack_days
 import datetime
 from config import keyboards
 from migraine_bot import db, bot
@@ -34,11 +34,13 @@ def send_help(message):
 def cancel_log(message):
     chat_id = message.chat.id
     state = db.get_state(chat_id)
+    db.set_step(chat_id, LogStep.INACTIVE)
     if state in [States.INACTIVE, States.WELCOME]:
         bot.reply_to(message, "Nothing to cancel. If you want to log an attack, just use commands /log to log "
                               "an attack.",
                      reply_markup=keyboards.remove_keyboard)
         return
+
     if state == States.LOGGING:
         db.delete_current_log(chat_id)
         db.set_state(chat_id, States.INACTIVE)
@@ -50,6 +52,11 @@ def cancel_log(message):
         bot.reply_to(message, "OK, I cancelled this operation. If you want to get statistics, just use commands /stats"
                               " to get .csv file and /calendar to get a calendar of past attacks along"
                               " with their intensities",
+                     reply_markup=keyboards.remove_keyboard)
+    if state == States.EDITING:
+        db.delete_current_log(chat_id)
+        db.set_state(chat_id, States.INACTIVE)
+        bot.reply_to(message, "OK, I cancelled editing. If you want to edit an attack, just use commands /edit",
                      reply_markup=keyboards.remove_keyboard)
 
 
@@ -73,7 +80,11 @@ def start_log(message):
 def start_edit(message):
     chat_id = message.chat.id
     step = db.get_step(chat_id)
-    if db.get_state(chat_id) == States.LOGGING:
+    state = db.get_state(chat_id)
+
+    if (state == States.EDITING) and (message.text == '/edit'):
+        bot.send_message(chat_id, "I've already started editing. If you want to cancel, use /cancel.")
+    elif state == States.LOGGING:
         if step == LogStep.ATTACK_START:
             bot.send_message(chat_id, 'Ok, let\'s edit the location of pain. Just choose the correct option',
                              reply_markup=keyboards.location_keyboard)
@@ -88,9 +99,18 @@ def start_edit(message):
             db.set_step(chat_id, LogStep.DATE)
     elif step == LogStep.FINISH_LOG:
         db.set_state(chat_id, States.EDITING)
+        db.set_step(chat_id, LogStep.CHOOSE_EDIT)
         db.fetch_last_log(chat_id)
         bot.send_message(chat_id, 'What would you like to edit?',
                          reply_markup=keyboards.edit_keyboard)
+    else:
+        past_attacks_keyboard = keyboards.create_keyboard(options=db.get_last_dates(chat_id, n_attack_days))
+        bot.send_message(chat_id, f'Please choose the date of an attack you would like to edit. Here are '
+                                  f'{n_attack_days} dates of your most recent attacks.\n\n You can choose one of the'
+                                  f' listed options or type the date in the format dd-mm-yy.',
+                         reply_markup=past_attacks_keyboard)
+        db.set_step(chat_id, LogStep.CHOOSE_ATTACK)
+        db.set_state(chat_id, States.EDITING)
 
 
 @bot.message_handler(func=lambda message: db.get_state(message.chat.id) == States.EDITING)
@@ -105,10 +125,10 @@ def edit(message):
         process_side(message)
     elif step == LogStep.DATE:
         process_date(message)
-    elif step == LogStep.FINISH_LOG:
+    elif step == LogStep.CHOOSE_EDIT:
         chosen_option = message.text
         if not(chosen_option.lower() in ['intensity', 'pain location', 'pain start', 'side', 'location',
-                                         'start', 'date']):
+                                         'start', 'date', 'edit another attack']):
             bot.send_message(chat_id, 'Please, choose one of the listed options')
         else:
             if chosen_option.lower() in ['intensity']:
@@ -129,6 +149,52 @@ def edit(message):
                                           ' date in the format dd-mm-yy',
                                  reply_markup=keyboards.date_keyboard)
                 db.set_step(chat_id, LogStep.DATE)
+            else:
+                db.set_step(chat_id, LogStep.CHOOSE_ATTACK)
+                db.delete_current_log(chat_id)
+                start_edit(message)
+    elif step == LogStep.CHOOSE_ATTACK:
+        date_str = message.text
+        if date_str in db.get_last_dates(chat_id, n_attack_days):
+            date = datetime.datetime.strptime(date_str, '%d %b %Y')
+        else:
+            try:
+                date = datetime.datetime.strptime(date_str, '%d-%m-%y')
+            except ValueError:
+                bot.send_message(chat_id, 'Please, choose one of the options or enter the date in the format'
+                                          ' dd-mm-yy', reply_markup=keyboards.date_keyboard)
+                return
+        logs_date = db.get_log(chat_id, date)
+        if len(logs_date) == 1:
+            message = print_log(chat_id, logs_date[0])
+            bot.send_message(chat_id, 'Here are the details of the attack for the chosen date:\n' + message +
+                             'What would you like to edit?', reply_markup=keyboards.edit_keyboard)
+            db.set_step(chat_id, LogStep.CHOOSE_EDIT)
+        elif len(logs_date) == 0:
+            bot.send_message(chat_id, 'There are no attacks for the chosen date. Please choose another date from the '
+                                      'listed options or enter the date in the format dd-mm-yy',
+                             reply_markup=keyboards.create_keyboard(options=db.get_last_dates(chat_id, n_attack_days)))
+        else:
+            message = ''
+            for i, migraine_log in enumerate(logs_date):
+                message += f'{i + 1}. ' + print_log(chat_id, migraine_log) + '\n'
+            bot.send_message(chat_id, "For the chosen date there are multiple attacks, here are the details.\n\n" +
+                             message + " Please choose the number of an attack you'd like to edit",
+                             reply_markup=keyboards.create_keyboard(range(1, 1 + len(logs_date))))
+            db.set_step(chat_id, LogStep.CHOOSE_ATTACK_MULTIPLE)
+
+    elif step == LogStep.CHOOSE_ATTACK_MULTIPLE:
+        try:
+            attack_num = int(message.text) - 1
+            if db.keep_one_log(chat_id, attack_num) == -1:
+                bot.reply_to(message, 'The entered number is too big or too small. '
+                                      '\nPlease choose the number of an attack you want to edit.')
+                return
+            bot.send_message(chat_id, 'Got it. What would you like to edit?',
+                             reply_markup=keyboards.edit_keyboard)
+            db.set_step(chat_id, LogStep.CHOOSE_EDIT)
+        except ValueError:
+            bot.reply_to(message, 'Please choose the valid integer number.')
 
 
 @bot.message_handler(func=lambda message: db.get_state(message.chat.id) == States.WELCOME)
@@ -177,7 +243,7 @@ def process_date(message):
                          reply_markup=keyboards.intensity_keyboard)
     else:
         db.set_step(chat_id, LogStep.FINISH_LOG)
-        print_current_log(message)
+        print_current_log(chat_id)
 
 
 def process_intensity(message):
@@ -203,7 +269,7 @@ def process_intensity(message):
                              reply_markup=keyboards.location_keyboard)
         else:
             db.set_step(chat_id, LogStep.FINISH_LOG)
-            print_current_log(message)
+            print_current_log(chat_id)
 
     except ValueError:
         bot.reply_to(message, "I can't interpret your answer as a numeric value. "
@@ -225,7 +291,7 @@ def process_side(message):
         bot.reply_to(message, 'I see. When did the pain start?', reply_markup=keyboards.pain_start_keyboard)
     else:
         db.set_step(chat_id, LogStep.FINISH_LOG)
-        print_current_log(message)
+        print_current_log(chat_id)
     #except Exception as e:
     #    bot.reply_to(message, 'Unknown error')
 
@@ -238,21 +304,17 @@ def process_pain_start(message):
         bot.reply_to(message, f'Please, choose one of the listed options.')
         return
 
-    attack_date = db.get_log(chat_id)['date']
+    attack_date = db.get_current_log(chat_id)['date']
     db.log_migraine(chat_id, {'$set': {'chat_id': chat_id, 'pain_start': pain_start,
                                        'date': attack_date.replace(hour=attack_start_dict[pain_start.lower()])}})
 
     db.set_step(chat_id, LogStep.FINISH_LOG)
-    print_current_log(message)
+    print_current_log(chat_id)
 
 
-def print_current_log(message):
-    chat_id = message.chat.id
-    migraine_log = db.get_log(chat_id)
-    message = f"Date: {migraine_log['date'].strftime('%d %b %y (%A)')}.\n" \
-              f"Pain intensity: {migraine_log['intensity']}.\n" \
-              f"Pain location: {migraine_log['side']}." \
-              f"\nPain started: {migraine_log['pain_start']}."
+def print_current_log(chat_id):
+    migraine_log = db.get_current_log(chat_id)
+    message = print_log(chat_id, migraine_log)
     bot.send_message(chat_id, 'Everything is set! Please check the logged data.\n' + message
                      + "\nIf you want to edit the data use the command /edit.",
                      reply_markup=keyboards.remove_keyboard)
@@ -274,5 +336,13 @@ def print_current_log(message):
 
     # except Exception as e:
     #    bot.reply_to(message, 'Unknown error')
+
+
+def print_log(chat_id, migraine_log):
+    message = f"Date: {migraine_log['date'].strftime('%d %b %y (%A)')}.\n" \
+    f"Pain intensity: {migraine_log['intensity']}.\n" \
+    f"Pain location: {migraine_log['side']}." \
+    f"\nPain started: {migraine_log['pain_start']}."
+    return message
 
 

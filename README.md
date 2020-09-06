@@ -4,13 +4,14 @@ Migraine Tracker bot is a telegram bot for tracking headaches and migraines. The
  
 ### Current Functionality
  * log attacks: intensity, the pain location, (approximate) start of the attack
- * cancel: cancel the current logging
- * get statistics: .csv file of logged attacks sorted by date
- * edit the last logged attack
+ * cancel: cancel the current logging/editing
+ * get statistics: 
+    * .csv file of logged attacks sorted by date
+    * month calendar (as image) of past attacks
+ * edit the logged attacks 
  
 ### To Be Done Next
  * add duration of the attack
  * add logging of taken medication
- * add possibility to log past attacks 
- * edit not only the last log
+ * delete a logged attack
  

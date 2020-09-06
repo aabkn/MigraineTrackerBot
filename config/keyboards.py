@@ -17,6 +17,10 @@ def create_keyboard(options):
     keyboard = telebot.types.ReplyKeyboardMarkup()
     for option in options:
         items.append(telebot.types.KeyboardButton(option))
+    if len(options) < 3:
+        keyboard.row(*items)
+        return keyboard
+
     keyboard.row(*items[:len(options) // 2])
     keyboard.row(*items[len(options) // 2:])
     return keyboard
@@ -25,9 +29,11 @@ def create_keyboard(options):
 location_keyboard = create_keyboard(options=['Both', 'Left', 'Right'])
 intensity_keyboard = create_keyboard(options=range(1, 11))
 pain_start_keyboard = create_keyboard(options=['Morning', 'Day', 'Evening', 'Night'])
-edit_keyboard = create_keyboard(options=['Intensity', 'Pain location', 'Pain start', 'Date'])
+edit_keyboard = create_keyboard(options=['Date', 'Intensity', 'Pain location', 'Pain start'])
+edit_keyboard.row('Edit another attack')
 date_keyboard = create_keyboard(options=date_options(datetime.date.today()))
 month_keyboard = create_keyboard(options=list(calendar.month_abbr)[1:])
 month_keyboard.row('Finish')
+# TODO: remove future months or start with current month
 remove_keyboard = telebot.types.ReplyKeyboardRemove(selective=False)
 

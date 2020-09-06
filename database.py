@@ -1,7 +1,8 @@
 import pymongo
 import pandas as pd
-from datetime import date
+from datetime import date, datetime
 from config.config import mongo_host
+import numpy as np
 
 
 class Database:
@@ -34,19 +35,29 @@ class Database:
     def log_migraine(self, chat_id, request):
         self.current_log_table.update({'chat_id': chat_id}, request, upsert=True)
 
-    def get_log(self, chat_id):
+    def get_current_log(self, chat_id):
         return self.current_log_table.find_one({'chat_id': chat_id})
 
     def delete_current_log(self, chat_id):
-        self.current_log_table.delete_one({'chat_id': chat_id})
+        self.current_log_table.delete_many({'chat_id': chat_id})
+
+    def keep_one_log(self, chat_id, num):
+        current_logs = self.current_log_table.find({'chat_id': chat_id})
+        if (num >= current_logs.count()) or (num < 0):
+            return -1
+        for i, entry in enumerate(current_logs):
+            if i != num:
+                self.current_log_table.delete_one(entry)
+        return 0
 
     def save_log(self, chat_id):
         current_log = self.current_log_table.find_one({'chat_id': chat_id})
         self.current_log_table.delete_one({'chat_id': chat_id})
+        current_log['last_modified'] = datetime.today()
         self.migraine_logs.update({'_id': current_log['_id']}, current_log, upsert=True)
 
     def fetch_last_log(self, chat_id):
-        request = self.migraine_logs.find_one({'chat_id': chat_id}, sort=[('_id', pymongo.DESCENDING)])
+        request = self.migraine_logs.find_one({'chat_id': chat_id}, sort=[('last_modified', pymongo.DESCENDING)])
         self.log_migraine(chat_id, request)
         return request
 
@@ -80,4 +91,22 @@ class Database:
         })
         return user_logs
 
+    def get_last_dates(self, chat_id, n):
+        user_logs = self.migraine_logs.find({'chat_id': chat_id}).distinct('date')
+        dates = np.unique([date(dt.year, dt.month, dt.day) for dt in user_logs])
+        return [date.strftime(dt, '%d %b %Y') for dt in dates[:-1 - n:-1]]
 
+    def get_log(self, chat_id, date):
+        user_logs = list(self.migraine_logs.find({
+            "$expr": {
+                "$and": [
+                    {'chat_id': chat_id},
+                    {"$eq": [{"$year": "$date"}, date.year]},
+                    {"$eq": [{"$month": "$date"}, date.month]},
+                    {"$eq": [{"$dayOfMonth": "$date"}, date.day]}
+                ]
+            }
+        }, sort=[('date', pymongo.ASCENDING)]))
+        if len(user_logs) != 0:
+            self.current_log_table.insert_many(user_logs)
+        return user_logs
