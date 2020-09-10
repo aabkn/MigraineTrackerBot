@@ -25,8 +25,11 @@ def get_stats(message):
             return
         try:
             with open(file_name, 'rb') as csv_file:
+                msg_to = bot.send_message(chat_id, 'Sure, here is your .csv file! If you want to get a month calendar'
+                                                   ' of past attacks use /calendar.',
+                                          reply_markup=keyboards.remove_keyboard)
                 bot.send_document(chat_id, csv_file)
-                logger.info(f'{chat_id}: Received: "{message.text}". Send document "{file_name}"')
+                logger.info(f'{chat_id}: Received: "{message.text}". Sent {msg_to.text} and document "{file_name}"')
             os.remove(file_name)
         except FileNotFoundError as not_found_e:
             logger.exception(not_found_e)
@@ -99,7 +102,10 @@ def get_calendar(message):
         file_name = visualisation.generate_calendar(chat_id, month_log, month, year)
         try:
             with open(file_name, 'rb') as calendar_img:
+                msg_to = bot.send_message(chat_id, 'Sure, here you are! To continue just choose another month or '
+                                                   'press Finish otherwise. ')
                 bot.send_photo(chat_id, calendar_img)
+                logger.info(info_message(message, msg_to))
             os.remove(file_name)
         except FileNotFoundError as not_found_e:
             logger.exception(not_found_e)

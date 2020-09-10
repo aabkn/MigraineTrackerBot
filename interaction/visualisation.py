@@ -24,7 +24,7 @@ def generate_calendar(id, full_data, month, year):
 
     calendar_heatmap(ax, dates, weeks, days, calendar_grid)
     fig.suptitle(f'{calendar.month_name[month]} {year}')
-    file_name = f'{id}_calendar_{month}_{year}'
+    file_name = f'/tmp/{id}_calendar_{month}_{year}'
     fig.savefig(file_name, bbox_inches='tight')
     return f'{file_name}.png'
 

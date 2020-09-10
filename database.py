@@ -1,7 +1,7 @@
 import pymongo
 import pandas as pd
 from datetime import date, datetime
-from config.config import mongo_host
+from config.config import mongo_host, mongo_pwd, mongo_admin
 import numpy as np
 import logging
 
@@ -10,7 +10,8 @@ logger_db = logging.getLogger('Database')
 
 class Database:
     def __init__(self):
-        self.client = pymongo.MongoClient(mongo_host)
+        self.client = pymongo.MongoClient(mongo_host, username=mongo_admin,
+                                          password=mongo_pwd)
         self.db = self.client['migraine_bot']
         self.users_table = self.db['users']
         self.state_table = self.db['user_state']
@@ -209,7 +210,7 @@ class Database:
             user_logs = list(self.migraine_logs.find({
                 "$expr": {
                     "$and": [
-                        {'chat_id': chat_id},
+                        {"$eq": ["$chat_id", chat_id]},
                         {"$eq": [{"$year": "$date"}, attack_date.year]},
                         {"$eq": [{"$month": "$date"}, attack_date.month]},
                         {"$eq": [{"$dayOfMonth": "$date"}, attack_date.day]}

@@ -1,4 +1,4 @@
-from config.config import States, LogStep, attack_start_dict, n_attack_days, allowed_ids
+from config.config import States, LogStep, attack_start_dict, n_attack_days, terms
 import datetime
 from config import keyboards
 from migraine_bot import db, bot
@@ -6,19 +6,6 @@ import logging
 from log_config.log_helper import debug_message, info_message
 
 logger = logging.getLogger('Server')
-
-
-@bot.message_handler(func=lambda message: not (message.chat.id in allowed_ids))
-def send_in_development(message):
-    msg_to = bot.send_message(message.chat.id, 'Hey, I am a bot for tracking migraines! Currently, this bot is '
-                                               'in development. I will notify you as soon as the development is '
-                                               'finished. Thank you for your  interest. Have a good time!\n\n'
-                                               'Привет, я бот для отслеживания мигреней! В настоящее время бот '
-                                               'находится в стадии разработки. Я уведомлю Вас, как только разработка'
-                                               ' будет завершена. Спасибо за Ваш интерес. Хорошего дня! ',
-                              reply_markup=keyboards.remove_keyboard)
-    logger.info(info_message(message, msg_to))
-    logger.debug(debug_message(message))
 
 
 @bot.message_handler(commands=['start'])
@@ -32,7 +19,11 @@ def send_welcome(message):
                                            "\n/stats - get .csv file of logged attacks "
                                            "\n/calendar - get a month calendar of past attacks along "
                                            "with their intensities"
-                                           "\n/help - get list of possible commands")
+                                           "\n/help - get list of possible commands\n\n"
+                                           "Before we start, please, read carefully "
+                                           f"[terms and privacy policy]({terms}). "
+                                           "By continuing using this bot you agree to the terms & privacy policy.",
+                                  parse_mode='Markdown')
         logger.info(info_message(message, msg_to))
 
         if not (db.exists_user(message.chat.id)):
@@ -87,8 +78,8 @@ def cancel_log(message):
 
         db.set_step(chat_id, LogStep.INACTIVE)
         if state == States.INACTIVE:
-            msg_to = bot.reply_to(message, "Nothing to cancel. If you want to log an attack, just use commands /log to log "
-                                           "an attack.",
+            msg_to = bot.reply_to(message, "Nothing to cancel. If you want to log an attack, just use commands "
+                                           "/log to log an attack.",
                                   reply_markup=keyboards.remove_keyboard)
             logger.info(info_message(message, msg_to))
             logger.debug(debug_message(message))
@@ -96,7 +87,7 @@ def cancel_log(message):
 
         if state == States.LOGGING:
             db.delete_current_log(chat_id)
-            message_to = "OK, I cancelled this log. If you want to log an attack, just use commands /log to log " \
+            message_to = "OK, I cancelled this log. If you want to log an attack, just use /log to log " \
                          "an attack."
         elif state == States.STATS:
             message_to = "OK, I cancelled this operation. If you want to get statistics, just use commands /stats" \
@@ -104,7 +95,7 @@ def cancel_log(message):
                          " with their intensities"
         elif state == States.EDITING:
             db.delete_current_log(chat_id)
-            message_to = "OK, I cancelled editing. If you want to edit an attack, just use commands /edit"
+            message_to = "OK, I cancelled editing. If you want to edit an attack, just use /edit command. "
         else:
             message_to = "Ok, I cancelled this operation."
             logger.warning(f'{chat_id}: Unexpected state: {state}, message: {message}')
@@ -276,9 +267,9 @@ def edit(message):
                     return
             logs_date = db.get_log(chat_id, date)
             if len(logs_date) == 1:
-                message = print_log(logs_date[0])
+                message_to = print_log(logs_date[0])
                 msg_to = bot.send_message(chat_id, 'Here are the details of the attack for the chosen date:\n' +
-                                          message + 'What would you like to edit?',
+                                          message_to + 'What would you like to edit?',
                                           reply_markup=keyboards.edit_keyboard)
                 db.set_step(chat_id, LogStep.CHOOSE_EDIT)
             elif len(logs_date) == 0:

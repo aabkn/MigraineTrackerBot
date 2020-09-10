@@ -1,10 +1,10 @@
 import json
 import logging
 import logging.config
-import sys
+from config.config import abs_path
 
 if __name__ == '__main__':
-    with open('log_config/logging.json') as f:
+    with open(abs_path + 'log_config/logging.json') as f:
         log_config = json.load(f)
     logging.config.dictConfig(log_config)
 
