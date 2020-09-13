@@ -31,7 +31,7 @@ intensity_keyboard = create_keyboard(options=range(1, 11))
 pain_start_keyboard = create_keyboard(options=['Morning', 'Day', 'Evening', 'Night'])
 edit_keyboard = create_keyboard(options=['Date', 'Intensity', 'Pain location', 'Pain start'])
 edit_keyboard.row('Edit another attack')
-date_keyboard = create_keyboard(options=date_options(datetime.date.today()))
+# date_keyboard = create_keyboard(options=date_options(datetime.date.today()))
 month_keyboard = create_keyboard(options=list(calendar.month_abbr)[1:])
 month_keyboard.row('Finish')
 # TODO: remove future months or start with current month

@@ -22,7 +22,12 @@ def send_welcome(message):
                                            "\n/help - get list of possible commands\n\n"
                                            "Before we start, please, read carefully "
                                            f"[terms and privacy policy]({terms}). "
-                                           "By continuing using this bot you agree to the terms & privacy policy.",
+                                           "By continuing using this bot you agree to the terms & privacy policy.\n\n"
+                                           "Please, note also, this bot is currently in development. This means, that "
+                                           "the functionality is not full (as planned) and bugs are possible. "
+                                           "If you feel uncomfortable about it, please, wait until the development "
+                                           "is finished, "
+                                           "it will be stated in the about section on the bot's profile page.",
                                   parse_mode='Markdown')
         logger.info(info_message(message, msg_to))
 
@@ -122,10 +127,12 @@ def start_log(message):
             msg_to = bot.reply_to(message, "I've already started logging. If you want to cancel, just use /cancel.")
             logger.info(info_message(message, msg_to))
             return
+
+        date_keyboard = keyboards.create_keyboard(options=keyboards.date_options(datetime.date.today()))
         msg_to = bot.reply_to(message, f'Hi, {name}! You started to log a migraine attack.\nSorry to hear that! '
                                        f'When was the attack? You can choose one of the listed options or '
                                        f'enter the date in the format dd-mm-yy',
-                              reply_markup=keyboards.date_keyboard)
+                              reply_markup=date_keyboard)
 
         db.set_step(chat_id, LogStep.DATE)
         db.set_state(chat_id, States.LOGGING)
@@ -162,9 +169,10 @@ def start_edit(message):
                                           reply_markup=keyboards.intensity_keyboard)
                 db.set_step(chat_id, LogStep.INTENSITY)
             elif step == LogStep.INTENSITY:
+                date_keyboard = keyboards.create_keyboard(options=keyboards.date_options(datetime.date.today()))
                 msg_to = bot.send_message(chat_id, 'Please, choose now the correct option or enter the date in '
                                                    'the format dd-mm-yy',
-                                          reply_markup=keyboards.date_keyboard)
+                                          reply_markup=date_keyboard)
                 db.set_step(chat_id, LogStep.DATE)
         elif step == LogStep.FINISH_LOG:
             db.set_state(chat_id, States.EDITING)
@@ -241,9 +249,10 @@ def edit(message):
                                               ' option', reply_markup=keyboards.pain_start_keyboard)
                     db.set_step(chat_id, LogStep.ATTACK_START)
                 elif chosen_option.lower() in ['date']:
+                    date_keyboard = keyboards.create_keyboard(options=keyboards.date_options(datetime.date.today()))
                     msg_to = bot.send_message(chat_id, 'Please, choose now the matching option or enter the'
                                                        ' date in the format dd-mm-yy',
-                                              reply_markup=keyboards.date_keyboard)
+                                              reply_markup=date_keyboard)
                     db.set_step(chat_id, LogStep.DATE)
                 else:
                     db.set_step(chat_id, LogStep.CHOOSE_ATTACK)
@@ -260,8 +269,9 @@ def edit(message):
                 try:
                     date = datetime.datetime.strptime(date_str, '%d-%m-%y')
                 except ValueError:
+                    date_keyboard = keyboards.create_keyboard(options=db.get_last_dates(chat_id, n_attack_days))
                     msg_to = bot.send_message(chat_id, 'Please, choose one of the options or enter the date in '
-                                                       'the format dd-mm-yy', reply_markup=keyboards.date_keyboard)
+                                                       'the format dd-mm-yy', reply_markup=date_keyboard)
                     logger.info(info_message(message, msg_to))
                     logger.debug(debug_message(message))
                     return
@@ -269,7 +279,7 @@ def edit(message):
             if len(logs_date) == 1:
                 message_to = print_log(logs_date[0])
                 msg_to = bot.send_message(chat_id, 'Here are the details of the attack for the chosen date:\n' +
-                                          message_to + 'What would you like to edit?',
+                                          message_to + '\nWhat would you like to edit?',
                                           reply_markup=keyboards.edit_keyboard)
                 db.set_step(chat_id, LogStep.CHOOSE_EDIT)
             elif len(logs_date) == 0:
@@ -350,16 +360,16 @@ def log(message):
         return
 
     if step == LogStep.DATE:
-        logger.info(f'Received: {message.text}. Called "process_date" function')
+        logger.info(f'{message.chat.id}: Received "{message.text}". Called "process_date" function')
         process_date(message)
     elif step == LogStep.INTENSITY:
-        logger.info(f'Received: {message.text}. Called "process_intensity" function')
+        logger.info(f'{message.chat.id}: Received "{message.text}". Called "process_intensity" function')
         process_intensity(message)
     elif step == LogStep.ATTACK_START:
-        logger.info(f'Received: {message.text}. Called "process_pain_start" function')
+        logger.info(f'{message.chat.id}: Received "{message.text}". Called "process_pain_start" function')
         process_pain_start(message)
     elif step == LogStep.LOCATION:
-        logger.info(f'Received: {message.text}. Called "process_side" function')
+        logger.info(f'{message.chat.id}: Received "{message.text}". Called "process_side" function')
         process_side(message)
     else:
         logger.warning(f'{message.chat.id}: Unexpected step {step}, message: {message}')
@@ -371,6 +381,7 @@ def process_date(message):
         date = message.text
         logger.debug(debug_message(message))
         date_options = keyboards.date_options(datetime.date.today())
+        print(date_options)
         if date in date_options:
             days_delta = date_options.index(date)
             attack_date = datetime.date.today() - datetime.timedelta(days=days_delta)
