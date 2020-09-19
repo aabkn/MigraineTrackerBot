@@ -244,6 +244,10 @@ log_dict = {'en': {'date': 'Date', 'intensity': 'Pain intensity', 'side': 'Pain 
             'ru': {'date': 'Дата', 'intensity': 'Интенсивность боли', 'side': 'Местоположение очага боли',
                    'pain_start': 'Боль началась', 'medication': 'Было принято обезболивающее'}}
 
+
+attack_start_dict = {'night': 0, 'morning': 6, 'day': 12, 'evening': 18,
+                     'ночью': 0, 'утром': 6, 'днем': 12, 'вечером': 18}
+
 # STATS
 no_logs = {'en': 'There are no logs yet! If you want to log an attack, use /log',
            'ru': 'Пока еще нет ни одной записи! Если вы хотите залогировать приступ, используйте /log'}

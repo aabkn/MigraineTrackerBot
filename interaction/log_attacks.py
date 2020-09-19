@@ -1,6 +1,7 @@
-from config.config import States, Steps, attack_start_dict, n_attack_days
+from config.config import States, Steps, n_attack_days
 import datetime
 from config import keyboards, messages
+from config.messages import attack_start_dict
 from migraine_bot import db, bot
 import logging
 import locale
