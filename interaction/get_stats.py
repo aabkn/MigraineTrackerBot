@@ -1,9 +1,10 @@
 from interaction import visualisation
 from migraine_bot import bot, db
-from config.config import States, LogStep
+from config.config import States, Steps
 import os
 from config import keyboards
 import calendar
+from config import messages
 import datetime
 import logging
 from log_config.log_helper import debug_message, info_message
@@ -13,20 +14,20 @@ logger = logging.getLogger('Server')
 
 @bot.message_handler(commands=['stats'])
 def get_stats(message):
+    lang = None
     try:
         logger.debug(debug_message(message))
         chat_id = message.chat.id
+        lang = db.get_lang(chat_id)
         db.set_state(chat_id, States.STATS)
-        logger.debug(debug_message(message))
         file_name = db.save_stats_csv(chat_id)
         if file_name is None:
-            msg_to = bot.send_message(chat_id, 'There are no logs yet! If you want to log an attack, use /log')
+            msg_to = bot.send_message(chat_id, messages.no_logs[lang])
             logger.info(info_message(message, msg_to))
             return
         try:
             with open(file_name, 'rb') as csv_file:
-                msg_to = bot.send_message(chat_id, 'Sure, here is your .csv file! If you want to get a month calendar'
-                                                   ' of past attacks use /calendar.',
+                msg_to = bot.send_message(chat_id, messages.sent_csv[lang],
                                           reply_markup=keyboards.remove_keyboard)
                 bot.send_document(chat_id, csv_file)
                 logger.info(f'{chat_id}: Received: "{message.text}". Sent {msg_to.text} and document "{file_name}"')
@@ -36,74 +37,69 @@ def get_stats(message):
             logger.warning(f'{chat_id}: File {file_name} not found, {message}')
 
         db.set_state(chat_id, States.INACTIVE)
-        logger.debug(debug_message(message))
 
     except Exception as e:
         logger.exception(e)
         logger.critical(f'{message.chat.id}: {message.text}, {message}')
-        msg_to = bot.reply_to(message, "Oh no! Something went wrong! Don't worry, "
-                              "I will figure it out!")
+        if lang is None:
+            lang = 'en'
+        msg_to = bot.reply_to(message, messages.error_message[lang])
         logger.info(info_message(message, msg_to))
 
 
 @bot.message_handler(commands=['calendar'])
 def ask_calendar_month(message):
+    lang = None
     try:
         logger.debug(debug_message(message))
         chat_id = message.chat.id
+        lang = db.get_lang(chat_id)
         name = db.get_username(chat_id)
         db.set_state(chat_id, States.STATS)
-        logger.debug(debug_message(message))
-        msg_to = bot.send_message(chat_id, f'Hi, {name}! Please, choose the month of current year you want '
-                                           f'to get a calendar of attacks for.'
-                                           f'\nIf you want to get calendar for month of another year '
-                                           f'enter the month and year'
-                                           f' in the format mm-yy (e.g. 08-20)',
-                                  reply_markup=keyboards.month_keyboard)
+        msg_to = bot.send_message(chat_id, messages.start_calendar[lang].replace('{name}', name),
+                                  reply_markup=keyboards.month_keyboard[lang])
         logger.info(info_message(message, msg_to))
-        db.set_step(chat_id, LogStep.CALENDAR)
-        logger.debug(debug_message(message))
+        db.set_step(chat_id, Steps.CALENDAR)
 
     except Exception as e:
         logger.exception(e)
         logger.critical(f'{message.chat.id}: {message.text}, {message}')
-        msg_to = bot.reply_to(message, "Oh no! Something went wrong! Don't worry, "
-                              "I will figure it out!")
+        if lang is None:
+            lang = 'en'
+        msg_to = bot.reply_to(message, messages.error_message[lang])
         logger.info(info_message(message, msg_to))
 
 
-@bot.message_handler(func=lambda message: (db.get_step(message.chat.id) == LogStep.CALENDAR) and
-                                           db.get_state(message.chat.id) == States.STATS)
+@bot.message_handler(func=lambda message: (db.get_step(message.chat.id) == Steps.CALENDAR) and
+                                          db.get_state(message.chat.id) == States.STATS)
 def get_calendar(message):
+    lang = None
     try:
         chat_id = message.chat.id
-        if message.text == 'Finish':
+        lang = db.get_lang(chat_id)
+        if message.text in ['Finish', 'Закончить']:
             db.set_state(chat_id, States.INACTIVE)
-            msg_to = bot.send_message(chat_id, 'Ok, finishing sending calendars. Use /calendar when you want to '
-                                      'get a month calendar'
-                                      ' of attacks next time', reply_markup=keyboards.remove_keyboard)
+            msg_to = bot.send_message(chat_id, messages.finish_calendars[lang], reply_markup=keyboards.remove_keyboard)
             logger.info(info_message(message, msg_to))
             return
 
-        if not (message.text in list(calendar.month_abbr)):
+        if not (message.text in keyboards.months_list[lang]):
             try:
                 date = datetime.datetime.strptime(message.text, '%m-%y')
                 month = date.month
                 year = date.year
             except ValueError:
-                msg_to = bot.send_message(chat_id, 'Please, choose one of the listed options or '
-                                          'enter a month in the format mm-yy.')
+                msg_to = bot.send_message(chat_id, messages.not_month[lang])
                 logger.info(info_message(message, msg_to))
                 return
         else:
-            month = list(calendar.month_abbr).index(message.text)
+            month = keyboards.months_list[lang].index(message.text) + 1
             year = datetime.datetime.today().year
         month_log = db.get_stats_month(chat_id, month=month, year=year)
         file_name = visualisation.generate_calendar(chat_id, month_log, month, year)
         try:
             with open(file_name, 'rb') as calendar_img:
-                msg_to = bot.send_message(chat_id, 'Sure, here you are! To continue just choose another month or '
-                                                   'press Finish otherwise. ')
+                msg_to = bot.send_message(chat_id, messages.sent_calendar[lang])
                 bot.send_photo(chat_id, calendar_img)
                 logger.info(info_message(message, msg_to))
             os.remove(file_name)
@@ -114,6 +110,7 @@ def get_calendar(message):
     except Exception as e:
         logger.exception(e)
         logger.critical(f'{message.chat.id}: {message.text}, {message}')
-        msg_to = bot.reply_to(message, "Oh no! Something went wrong! Don't worry, "
-                              "I will figure it out!")
+        if lang is None:
+            lang = 'en'
+        msg_to = bot.reply_to(message, messages.error_message[lang])
         logger.info(info_message(message, msg_to))

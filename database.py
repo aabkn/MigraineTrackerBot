@@ -3,6 +3,7 @@ import pandas as pd
 from datetime import date, datetime
 from config.config import mongo_host, mongo_pwd, mongo_admin
 import numpy as np
+import locale
 import logging
 
 logger_db = logging.getLogger('Database')
@@ -17,10 +18,12 @@ class Database:
         self.state_table = self.db['user_state']
         self.current_log_table = self.db['current_log']
         self.migraine_logs = self.db['migraine_logs']
+        self.user_meds = self.db['user_meds']
 
     def insert_user(self, chat_id, username):
         try:
-            self.users_table.update({'chat_id': chat_id}, {'chat_id': chat_id, 'username': username}, upsert=True)
+            self.users_table.update({'chat_id': chat_id}, {'$set': {'chat_id': chat_id, 'username': username}},
+                                    upsert=True)
             logger_db.debug(f'{chat_id}: insert new user {username}')
         except Exception as e:
             logger_db.exception(e)
@@ -37,10 +40,43 @@ class Database:
 
     def get_username(self, chat_id):
         try:
+            user = self.users_table.find_one({'chat_id': chat_id})
+            if user.get('username') is None:
+                return None
             return self.users_table.find_one({'chat_id': chat_id})['username']
         except Exception as e:
             logger_db.exception(e)
             logger_db.critical(f'{chat_id}: "users_table" - find_one')
+            raise e
+
+    def get_lang(self, chat_id, return_none=False):
+        try:
+            if self.exists_user(chat_id):
+                user = self.users_table.find_one({'chat_id': chat_id})
+            else:
+                return None
+            if user.get('lang') is None:
+                if return_none:
+                    return None
+                self.users_table.update({'chat_id': chat_id}, {"$set": {'chat_id': chat_id, 'lang': 'en'}})
+                logger_db.debug(f'{chat_id}: set lang en')
+                return 'en'
+            else:
+                return user['lang']
+        except Exception as e:
+            logger_db.exception(e)
+            logger_db.critical(f'{chat_id}: "users_table" - find_one, update')
+            raise e
+
+    def set_lang(self, chat_id, lang):
+        try:
+            if lang != 'ru':
+                lang = 'en'
+            self.users_table.update({'chat_id': chat_id}, {'$set': {'chat_id': chat_id, 'lang': lang}}, upsert=True)
+            logger_db.debug(f'{chat_id}: set lang {lang}')
+        except Exception as e:
+            logger_db.exception(e)
+            logger_db.critical(f'{chat_id}: "users_table" - update')
             raise e
 
     def set_state(self, chat_id, state):
@@ -199,6 +235,11 @@ class Database:
             user_logs = self.migraine_logs.find({'chat_id': chat_id}).distinct('date')
             dates = np.unique([date(dt.year, dt.month, dt.day) for dt in user_logs])
             logger_db.debug(f'{chat_id}: get last {n} logs - {dates}')
+            lang = self.get_lang(chat_id)
+            if lang == 'ru':
+                locale.setlocale(locale.LC_ALL, 'ru_RU.UTF-8')
+            else:
+                locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
             return [date.strftime(dt, '%d %b %Y') for dt in dates[:-1 - n:-1]]
         except Exception as e:
             logger_db.exception(e)
@@ -226,3 +267,63 @@ class Database:
             logger_db.exception(e)
             logger_db.critical(f'{chat_id}: "migraine_logs" - find ({attack_date}), "current_log" - insert_many')
             raise e
+
+    def add_med(self, chat_id, med):
+        try:
+            self.user_meds.update({'chat_id': chat_id}, {"$addToSet": {'meds': med}}, upsert=True)
+            logger_db.debug(f'{chat_id}: added {med} in "user_meds" ')
+        except Exception as e:
+            logger_db.exception(e)
+            logger_db.critical(f'{chat_id}: "user_meds" - update med: {med}')
+            raise e
+
+    def get_meds(self, chat_id):
+        try:
+            meds = self.user_meds.find_one({'chat_id': chat_id})
+            logger_db.debug(f'{chat_id}: retrieve {meds} in "user_meds" ')
+            if meds is None:
+                return []
+            if meds.get('meds') is None:
+                return []
+            return meds['meds']
+
+        except Exception as e:
+            logger_db.exception(e)
+            logger_db.critical(f'{chat_id}: "user_meds" - find')
+            raise e
+
+    def remove_med(self, chat_id, med):
+        try:
+            self.user_meds.update({'chat_id': chat_id}, {"$pull": {'meds': med}})
+            logger_db.debug(f'{chat_id}: removed {med} from "user_meds"')
+        except Exception as e:
+            logger_db.exception(e)
+            logger_db.critical(f'{chat_id}: "user_meds" - update, pull med: {med}')
+            raise e
+
+    def set_meds_msg_id(self, chat_id, msg_id):
+        try:
+            self.user_meds.update({'chat_id': chat_id}, {'$set': {'chat_id': chat_id, 'msg_id': msg_id}}, upsert=True)
+            logger_db.debug(f'{chat_id}: added {msg_id} in "user_meds" ')
+        except Exception as e:
+            logger_db.exception(e)
+            logger_db.critical(f'{chat_id}: "user_meds" - update msg_id: {msg_id}')
+            raise e
+
+    def get_meds_msg_id(self, chat_id):
+        try:
+            user_meds_row = self.user_meds.find_one({'chat_id': chat_id})
+            if user_meds_row is None:
+                logger_db.debug(f'{chat_id}: no user in "user_meds" ')
+                return None
+            if user_meds_row.get('msg_id') is None:
+                logger_db.debug(f'{chat_id}: no msg_id in "user_meds" ')
+                return None
+            msg_id = user_meds_row['msg_id']
+            logger_db.debug(f'{chat_id}: retrieve msg_id {msg_id} from "user_meds" ')
+            return msg_id
+        except Exception as e:
+            logger_db.exception(e)
+            logger_db.critical(f'{chat_id}: "user_meds" - find_one')
+            raise e
+
