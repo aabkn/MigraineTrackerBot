@@ -3,9 +3,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.colors import LinearSegmentedColormap
 import calendar
+from config import messages
 
 
-def generate_calendar(id, full_data, month, year):
+def generate_calendar(chat_id, lang, full_data, month, year):
     plt.switch_backend('Agg')
     fig, ax = plt.subplots(figsize=(6, 5.5))
     start = datetime.datetime(year, month, 1)
@@ -23,8 +24,9 @@ def generate_calendar(id, full_data, month, year):
         calendar_grid[week - first_week, day - 1] = entry['intensity']
 
     calendar_heatmap(ax, dates, weeks, days, calendar_grid)
-    fig.suptitle(f'{calendar.month_name[month]} {year}')
-    file_name = f'/tmp/{id}_calendar_{month}_{year}'
+
+    fig.suptitle(f'{messages.month_names[lang][month]} {year}')
+    file_name = f'/tmp/{chat_id}_calendar_{month}_{year}'
     fig.savefig(file_name, bbox_inches='tight')
     return f'{file_name}.png'
 

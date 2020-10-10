@@ -9,4 +9,4 @@ if __name__ == '__main__':
     logging.config.dictConfig(log_config)
 
     from migraine_bot import bot
-    bot.polling()
+    bot.polling(True)

@@ -6,6 +6,5 @@ import database
 bot = telebot.TeleBot(token, parse_mode=None)
 db = database.Database()
 
-from interaction import log_attacks
-from interaction import get_stats, preferences
-
+from interaction import commands
+from interaction import states

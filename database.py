@@ -22,12 +22,12 @@ class Database:
 
     def insert_user(self, chat_id, username):
         try:
-            self.users_table.update({'chat_id': chat_id}, {'$set': {'chat_id': chat_id, 'username': username}},
-                                    upsert=True)
+            self.users_table.update_one({'chat_id': chat_id}, {'$set': {'chat_id': chat_id, 'username': username}},
+                                        upsert=True)
             logger_db.debug(f'{chat_id}: insert new user {username}')
         except Exception as e:
             logger_db.exception(e)
-            logger_db.critical(f'{chat_id}: "users_table" - update username {username}')
+            logger_db.critical(f'{chat_id}: "users_table" - update_one username {username}')
             raise e
 
     def exists_user(self, chat_id):
@@ -58,7 +58,7 @@ class Database:
             if user.get('lang') is None:
                 if return_none:
                     return None
-                self.users_table.update({'chat_id': chat_id}, {"$set": {'chat_id': chat_id, 'lang': 'en'}})
+                self.users_table.update_one({'chat_id': chat_id}, {"$set": {'chat_id': chat_id, 'lang': 'en'}})
                 logger_db.debug(f'{chat_id}: set lang en')
                 return 'en'
             else:
@@ -72,7 +72,7 @@ class Database:
         try:
             if lang != 'ru':
                 lang = 'en'
-            self.users_table.update({'chat_id': chat_id}, {'$set': {'chat_id': chat_id, 'lang': lang}}, upsert=True)
+            self.users_table.update_one({'chat_id': chat_id}, {'$set': {'chat_id': chat_id, 'lang': lang}}, upsert=True)
             logger_db.debug(f'{chat_id}: set lang {lang}')
         except Exception as e:
             logger_db.exception(e)
@@ -81,11 +81,12 @@ class Database:
 
     def set_state(self, chat_id, state):
         try:
-            self.state_table.update({'chat_id': chat_id}, {'$set': {'chat_id': chat_id, 'state': state}}, upsert=True)
+            self.state_table.update_one({'chat_id': chat_id}, {'$set': {'chat_id': chat_id, 'state': state}},
+                                        upsert=True)
             logger_db.debug(f'{chat_id}: set state {state}')
         except Exception as e:
             logger_db.exception(e)
-            logger_db.critical(f'{chat_id}: "state_table" - update state {state}')
+            logger_db.critical(f'{chat_id}: "state_table" - update_one state {state}')
             raise e
 
     def get_state(self, chat_id):
@@ -98,11 +99,11 @@ class Database:
 
     def set_step(self, chat_id, step):
         try:
-            self.state_table.update({'chat_id': chat_id}, {'$set': {'chat_id': chat_id, 'step': step}}, upsert=True)
+            self.state_table.update_one({'chat_id': chat_id}, {'$set': {'chat_id': chat_id, 'step': step}}, upsert=True)
             logger_db.debug(f'{chat_id}: set step {step}')
         except Exception as e:
             logger_db.exception(e)
-            logger_db.critical(f'{chat_id}: "state_table" - update step {step}')
+            logger_db.critical(f'{chat_id}: "state_table" - update_one step {step}')
             raise e
 
     def get_step(self, chat_id):
@@ -113,13 +114,26 @@ class Database:
             logger_db.critical(f'{chat_id}: "state_table" - find_one')
             raise e
 
-    def log_migraine(self, chat_id, request):
+    def log_migraine(self, chat_id, migraine_data: dict, append=False):
         try:
-            self.current_log_table.update({'chat_id': chat_id}, request, upsert=True)
-            logger_db.debug(f'{chat_id}: logged migraine to "current log" collection {request}')
+            if append:
+                for field_key in migraine_data.keys():
+                    current_log_entry = self.current_log_table.find_one({'chat_id': chat_id})
+                    if current_log_entry.get(field_key) is None or current_log_entry[field_key] == "":
+                        self.current_log_table.update_one({'chat_id': chat_id},
+                                                          {"$set": {field_key: migraine_data[field_key]}}, upsert=True)
+                    else:
+                        self.current_log_table.update_one({'chat_id': chat_id},
+                                                          [{"$set": {field_key: {"$concat":
+                                                                                     ["$" + field_key, ", ",
+                                                                                      migraine_data[field_key]]}}}])
+                logger_db.debug(f'{chat_id}: appended to {field_key} in "current log" collection {migraine_data}')
+            else:
+                self.current_log_table.update_one({'chat_id': chat_id}, {"$set": migraine_data}, upsert=True)
+                logger_db.debug(f'{chat_id}: logged migraine details to "current log" collection {migraine_data}')
         except Exception as e:
             logger_db.exception(e)
-            logger_db.critical(f'{chat_id}: "current_log" - update {request}')
+            logger_db.critical(f'{chat_id}: "current_log" - update_one {migraine_data}')
             raise e
 
     def get_current_log(self, chat_id):
@@ -164,7 +178,7 @@ class Database:
 
             self.current_log_table.delete_one({'chat_id': chat_id})
             current_log['last_modified'] = datetime.today()
-            self.migraine_logs.update({'_id': current_log['_id']}, current_log, upsert=True)
+            self.migraine_logs.replace_one({'_id': current_log['_id']}, current_log, upsert=True)
 
             logger_db.debug(f'{chat_id}: saved migraine log to "migraine_logs" collection '
                             f'{list(current_log)}')
@@ -270,11 +284,11 @@ class Database:
 
     def add_med(self, chat_id, med):
         try:
-            self.user_meds.update({'chat_id': chat_id}, {"$addToSet": {'meds': med}}, upsert=True)
+            self.user_meds.update_one({'chat_id': chat_id}, {"$addToSet": {'meds': med}}, upsert=True)
             logger_db.debug(f'{chat_id}: added {med} in "user_meds" ')
         except Exception as e:
             logger_db.exception(e)
-            logger_db.critical(f'{chat_id}: "user_meds" - update med: {med}')
+            logger_db.critical(f'{chat_id}: "user_meds" - update_one med: {med}')
             raise e
 
     def get_meds(self, chat_id):
@@ -294,7 +308,7 @@ class Database:
 
     def remove_med(self, chat_id, med):
         try:
-            self.user_meds.update({'chat_id': chat_id}, {"$pull": {'meds': med}})
+            self.user_meds.update_one({'chat_id': chat_id}, {"$pull": {'meds': med}})
             logger_db.debug(f'{chat_id}: removed {med} from "user_meds"')
         except Exception as e:
             logger_db.exception(e)
@@ -303,11 +317,12 @@ class Database:
 
     def set_meds_msg_id(self, chat_id, msg_id):
         try:
-            self.user_meds.update({'chat_id': chat_id}, {'$set': {'chat_id': chat_id, 'msg_id': msg_id}}, upsert=True)
+            self.user_meds.update_one({'chat_id': chat_id}, {'$set': {'chat_id': chat_id, 'msg_id': msg_id}},
+                                      upsert=True)
             logger_db.debug(f'{chat_id}: added {msg_id} in "user_meds" ')
         except Exception as e:
             logger_db.exception(e)
-            logger_db.critical(f'{chat_id}: "user_meds" - update msg_id: {msg_id}')
+            logger_db.critical(f'{chat_id}: "user_meds" - update_one msg_id: {msg_id}')
             raise e
 
     def get_meds_msg_id(self, chat_id):
@@ -326,4 +341,3 @@ class Database:
             logger_db.exception(e)
             logger_db.critical(f'{chat_id}: "user_meds" - find_one')
             raise e
-

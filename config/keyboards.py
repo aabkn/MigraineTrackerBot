@@ -108,3 +108,9 @@ default_meds_list = {'en': ['Ibuprofen', 'Aspirin', 'Paracetamol', 'Diclofenac',
                     'Naratriptan', 'Zolmitriptan (Zomig)'],
              'ru': ['Ибупрофен', 'Аспирин', 'Парацетамол', 'Диклофенак', 'Кофеин', 'Элетриптан (Релпакс)',
                     'Суматриптан', 'Наратриптан', 'Золмитриптан (Зомиг) ']}
+
+meds_keyboard_row = {'en': ['No', 'Add multiple'],
+                     'ru': ['Нет', 'Добавить несколько']}
+
+meds_keyboard_multiple_row = {'en': 'Done \u2705',
+                              'ru': 'Готово \u2705'}

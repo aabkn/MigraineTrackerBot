@@ -1,4 +1,5 @@
 from config.config import terms
+import calendar
 
 help_message = {'en': "Hey, I am a bot for tracking headaches and migraines! Here is the list of "
                       "the possible commands:\n/log - log an attack"
@@ -89,14 +90,17 @@ interrupt_edit = {'en': "If you want to interrupt editing and start logging or k
 
 start_logging = {'en': 'Hi, {name}! You started to log a headache or migraine attack.\n'
                        'Sorry to hear that! '
-                       'When was the attack? You can choose one of the listed options or '
+                       'When was the attack? \n'
+                       'There is no date you need?  \U0001F914 You can choose one of the listed options or '
                        'enter the date in the format dd-mm-yy (e.g. 12-08-20). ',
-                 'ru': 'Привет, {name}! Мне жаль, что у вас был приступ! Когда он был? Вы можете выбрать один из '
+                 'ru': 'Привет, {name}! Мне жаль, что у вас был приступ! Когда он был? \n'
+                       'Нет подходящей даты? \U0001F914 Вы можете выбрать один из '
                        'предложенных вариантов или ввести дату в формате дд-мм-гг (например, 12-08-20). '}
 
 already_edit = {'en': "I've already started editing. If you want to cancel or"
                       " log, use /cancel.",
-                'ru': "Я уже начал редактирование. Если вы хотите отменить или начать логирование, используйте /cancel. "}
+                'ru': "Я уже начал редактирование. Если вы хотите отменить или "
+                      "начать логирование, используйте /cancel. "}
 
 edit_location = {'en': 'Ok, let\'s edit the location of pain. '
                        'Just choose where the pain was located. ',
@@ -148,10 +152,18 @@ edit_got_it = {'en': 'Got it. What would you like to edit?',
 nice_to_meet = {'en': 'Nice to meet you, {name}!',
                 'ru': 'Приятно познакомиться, {name}!'}
 
+default_name = {'en': 'my friend',
+                'ru': 'мой друг'}
+
 interrupt_log = {'en': 'If you want to interrupt logging and know e.g. statistics, use '
                        'first /cancel and then the command you need',
                  'ru': 'Если вы хотите прервать логирование и узнать, например, статистику, используйте сначала '
                        '/cancel, а затем команду, которая вам нужна '}
+
+edit_start_log = {'en': 'In this log there is nothing to edit yet. If you want to edit another attack, use first '
+                        '/cancel and then /edit. ',
+                  'ru': 'В этой записи еще нечего редактировать. Если вы хотите редактировать другой приступ, '
+                        'используйте сначала /cancel, а затем /edit. '}
 
 # ASK LOG QUESTIONS
 
@@ -173,6 +185,12 @@ ask_medication = {'en': 'Did you take any medication? If so, which ones? Choose 
                   'ru': 'Принимали ли вы обезболивающие? Если да, то какие? Выберите один из предложенных вариантов'
                         ' или введите название препарата. '}
 
+ask_multiple_medication = {'en': 'Sure, choose or type medications you have taken.  ',
+                           'ru': 'Конечно, просто выберите или введите принятые препараты. '}
+
+ask_next_medication = {'en': 'Got it, anything else? \nChoose now another medication or press Done.  ',
+                       'ru': 'Записал, что-то еще? \nВыберите теперь другой препарат из списка или нажмите Готово. '}
+
 empty_meds_list = {'en': "\n\n_You don't have any "
                          "preferred medications yet. You can compose your usual"
                          " medication list in /settings. For your convenience"
@@ -187,10 +205,12 @@ empty_meds_list = {'en': "\n\n_You don't have any "
                          " ваши предпочитаемые обезболивающие будут "
                          "предложены в виде кнопок. Пока что можете просто ввести имя своего обезболивающего. _"}
 
-finish_log = {'en': "Everything is set! Please check the logged data.\n {message}"
-                    " \nIf you want to edit the data use the command /edit.",
-              'ru': 'Готово! Пожалуйста, проверьте данные, которые я записал. {message}'
-                    '\nЕсли вы хотите что-то отредактировать, используйте /edit. '}
+finish_log = {'en': "Everything is set! Please check the logged data.\n{message}"
+                    " \nIf you want to edit the data use the command /edit.\nIf you want to see statistics, use "
+                    "/calendar or /stats.",
+              'ru': 'Готово! Пожалуйста, проверьте данные, которые я записал.\n{message}'
+                    '\nЕсли вы хотите что-то отредактировать, используйте /edit.\nЕсли хотите посмотреть статистику, '
+                    'используйте /calendar или /stats. '}
 
 #  NOT A VALID ANSWER
 
@@ -261,7 +281,7 @@ sent_csv = {'en': 'Sure, here is your .csv file! If you want to get a month cale
 finish_calendars = {'en': 'Ok, finishing sending calendars. Use /calendar when you want to '
                           'get a month calendar'
                           ' of attacks next time',
-                    'ru': 'Хорошо, закончиваю отправлять календари. Используйте /calendar, когда захотите получить '
+                    'ru': 'Хорошо, заканчиваю отправлять календари. Используйте /calendar, когда захотите получить '
                           'месячный календарь прошедших приступов в следующий раз. '}
 
 not_month = {'en': 'Please, choose one of the listed options or '
@@ -280,6 +300,10 @@ start_calendar = {'en': 'Hi, {name}! Please, choose the month of current year yo
                   'ru': 'Привет, {name}! Пожалуйста, выберите месяц текущего года, для которого вы хотите получить '
                         'календарь приступов.\nЕсли вы хотите получить календарь для месяца другого месяца, введите '
                         'месяц и год в формате мм-гг (например, 08-20) '}
+
+month_names = {'en': calendar.month_name,
+               'ru': ['', 'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь',
+                      'Октябрь', 'Ноябрь', 'Декабрь']}
 
 # PREFERENCES
 
@@ -301,12 +325,13 @@ empty_meds_finish = {'en': "Your list of preferred medications is empty!",
                      'ru': "Ваш список предпочитаемых обезболивающих пуст!"}
 
 create_meds_list = {'en': "Now you can choose from the list medications that you usually take."
-                          "I recommend you to choose 3-4 for future convenience during logging. If "
-                          "you "
-                          "didn't find your preferred medication just enter its name. ",
+                          "I recommend you to choose 3-4 for future convenience during logging.",
                     'ru': "Теперь вы можете выбрать из списка обезболивающие, которые обычно принимаете. Я рекомендую "
-                          "выбрать 3-4 для удобства во время логирования. Если вы не нашли препарат, который "
-                          "принимаете, просто введите его имя. "}
+                          "выбрать 3-4 для удобства во время логирования. "}
+
+hint_type_med = {'en': "Didn't find your medication? \U0001F914 \nJust type it here, it will appear in buttons above. ",
+                 'ru': "Не нашли имя своего препарата? \U0001F914 \nПросто напишите его имя здесь, "
+                       "оно появится в кнопках выше. "}
 
 keyboard_removed = {'en': "_Keyboard was removed, if you want to edit "
                           "your list of medications use /settings_ ",
