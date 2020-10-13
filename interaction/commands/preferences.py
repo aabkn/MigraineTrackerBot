@@ -22,7 +22,7 @@ def ask_language(message):
         db.set_state(chat_id, States.SETTINGS)
     except Exception as e:
         logger.exception(e)
-        logger.critical(f'{message.chat.id}: {message.text}, {message}')
+        logger.error(f'{message.chat.id}: {message.text}, {message}')
         if lang is None:
             lang = 'en'
         msg_to = bot.reply_to(message, messages.error_message[lang])
@@ -44,7 +44,7 @@ def show_settings(message):
         db.set_step(chat_id, Steps.START_MEDICATION)
     except Exception as e:
         logger.exception(e)
-        logger.critical(f'{message.chat.id}: {message.text}, {message}')
+        logger.error(f'{message.chat.id}: {message.text}, {message}')
         if lang is None:
             lang = 'en'
         msg_to = bot.reply_to(message, messages.error_message[lang])
@@ -98,7 +98,7 @@ def add_meds(call):
                               parse_mode='HTML')
     except Exception as e:
         logger.exception(e)
-        logger.critical(f'{call.message.chat.id}: {call.message.text}, {call}')
+        logger.error(f'{call.message.chat.id}: {call.message.text}, {call}')
         if lang is None:
             lang = 'en'
         msg_to = bot.reply_to(call.message, messages.error_message[lang])

@@ -5,6 +5,7 @@ from config.config import mongo_host, mongo_pwd, mongo_admin
 import numpy as np
 import locale
 import logging
+from config.messages import default_name
 
 logger_db = logging.getLogger('Database')
 
@@ -27,7 +28,7 @@ class Database:
             logger_db.debug(f'{chat_id}: insert new user {username}')
         except Exception as e:
             logger_db.exception(e)
-            logger_db.critical(f'{chat_id}: "users_table" - update_one username {username}')
+            logger_db.error(f'{chat_id}: "users_table" - update_one username {username}')
             raise e
 
     def exists_user(self, chat_id):
@@ -35,7 +36,7 @@ class Database:
             return self.users_table.find({'chat_id': chat_id}).count()
         except Exception as e:
             logger_db.exception(e)
-            logger_db.critical(f'{chat_id}: "users_table" - find/count')
+            logger_db.error(f'{chat_id}: "users_table" - find/count')
             raise e
 
     def get_username(self, chat_id):
@@ -46,7 +47,7 @@ class Database:
             return self.users_table.find_one({'chat_id': chat_id})['username']
         except Exception as e:
             logger_db.exception(e)
-            logger_db.critical(f'{chat_id}: "users_table" - find_one')
+            logger_db.error(f'{chat_id}: "users_table" - find_one')
             raise e
 
     def get_lang(self, chat_id, return_none=False):
@@ -65,7 +66,7 @@ class Database:
                 return user['lang']
         except Exception as e:
             logger_db.exception(e)
-            logger_db.critical(f'{chat_id}: "users_table" - find_one, update')
+            logger_db.error(f'{chat_id}: "users_table" - find_one, update')
             raise e
 
     def set_lang(self, chat_id, lang):
@@ -76,7 +77,7 @@ class Database:
             logger_db.debug(f'{chat_id}: set lang {lang}')
         except Exception as e:
             logger_db.exception(e)
-            logger_db.critical(f'{chat_id}: "users_table" - update')
+            logger_db.error(f'{chat_id}: "users_table" - update')
             raise e
 
     def set_state(self, chat_id, state):
@@ -86,7 +87,7 @@ class Database:
             logger_db.debug(f'{chat_id}: set state {state}')
         except Exception as e:
             logger_db.exception(e)
-            logger_db.critical(f'{chat_id}: "state_table" - update_one state {state}')
+            logger_db.error(f'{chat_id}: "state_table" - update_one state {state}')
             raise e
 
     def get_state(self, chat_id):
@@ -94,7 +95,7 @@ class Database:
             return self.state_table.find_one({'chat_id': chat_id})['state']
         except Exception as e:
             logger_db.exception(e)
-            logger_db.critical(f'{chat_id}: "state_table" - find_one')
+            logger_db.error(f'{chat_id}: "state_table" - find_one')
             raise e
 
     def set_step(self, chat_id, step):
@@ -103,7 +104,7 @@ class Database:
             logger_db.debug(f'{chat_id}: set step {step}')
         except Exception as e:
             logger_db.exception(e)
-            logger_db.critical(f'{chat_id}: "state_table" - update_one step {step}')
+            logger_db.error(f'{chat_id}: "state_table" - update_one step {step}')
             raise e
 
     def get_step(self, chat_id):
@@ -111,7 +112,7 @@ class Database:
             return self.state_table.find_one({'chat_id': chat_id})['step']
         except Exception as e:
             logger_db.exception(e)
-            logger_db.critical(f'{chat_id}: "state_table" - find_one')
+            logger_db.error(f'{chat_id}: "state_table" - find_one')
             raise e
 
     def log_migraine(self, chat_id, migraine_data: dict, append=False):
@@ -133,7 +134,7 @@ class Database:
                 logger_db.debug(f'{chat_id}: logged migraine details to "current log" collection {migraine_data}')
         except Exception as e:
             logger_db.exception(e)
-            logger_db.critical(f'{chat_id}: "current_log" - update_one {migraine_data}')
+            logger_db.error(f'{chat_id}: "current_log" - update_one {migraine_data}')
             raise e
 
     def get_current_log(self, chat_id):
@@ -141,7 +142,7 @@ class Database:
             return self.current_log_table.find_one({'chat_id': chat_id})
         except Exception as e:
             logger_db.exception(e)
-            logger_db.critical(f'{chat_id}: "current_log" - find_one')
+            logger_db.error(f'{chat_id}: "current_log" - find_one')
             raise e
 
     def delete_current_log(self, chat_id):
@@ -150,7 +151,7 @@ class Database:
             logger_db.debug(f'{chat_id}: deleted current log ')
         except Exception as e:
             logger_db.exception(e)
-            logger_db.critical(f'{chat_id}: "current_log" - delete_many')
+            logger_db.error(f'{chat_id}: "current_log" - delete_many')
             raise e
 
     def keep_one_log(self, chat_id, num):
@@ -167,7 +168,7 @@ class Database:
             return 0
         except Exception as e:
             logger_db.exception(e)
-            logger_db.critical(f'{chat_id}: "current_log" - find/delete_one (num {num})')
+            logger_db.error(f'{chat_id}: "current_log" - find/delete_one (num {num})')
             raise e
 
     def save_log(self, chat_id):
@@ -184,7 +185,7 @@ class Database:
                             f'{list(current_log)}')
         except Exception as e:
             logger_db.exception(e)
-            logger_db.critical(f'{chat_id}: "current_log" - find_one, delete_one, "migraine_logs" - update')
+            logger_db.error(f'{chat_id}: "current_log" - find_one, delete_one, "migraine_logs" - update')
             raise e
 
     def fetch_last_log(self, chat_id):
@@ -194,7 +195,7 @@ class Database:
             return request
         except Exception as e:
             logger_db.exception(e)
-            logger_db.critical(f'{chat_id}: "migraine_logs" - find_one, self.log_migraine')
+            logger_db.error(f'{chat_id}: "migraine_logs" - find_one, self.log_migraine')
             raise e
 
     def save_stats_csv(self, chat_id):
@@ -214,16 +215,18 @@ class Database:
                 df.reset_index(drop=True, inplace=True)
             except KeyError as df_e:
                 logger_db.exception(df_e)
-                logger_db.critical(f'{chat_id}: dataframe key error {df.columns} '
+                logger_db.error(f'{chat_id}: dataframe key error {df.columns} '
                                    f'(should be chat_id, _id, last_modified, date), {df.info()}')
 
             username = self.get_username(chat_id)
+            if username == default_name['en'] or username == default_name['ru']:
+                username = 'migraine'
             filename = f'/tmp/{username}_logs_{date.today().strftime("%d-%m-%Y")}.csv'
             df.to_csv(filename)
             return filename
         except Exception as e:
             logger_db.exception(e)
-            logger_db.critical(f'{chat_id}: "migraine_logs" - find')
+            logger_db.error(f'{chat_id}: "migraine_logs" - find')
             raise e
 
     def get_stats_month(self, chat_id, month, year):
@@ -241,7 +244,7 @@ class Database:
             return user_logs
         except Exception as e:
             logger_db.exception(e)
-            logger_db.critical(f'{chat_id}: "migraine_logs" - find ({month, year})')
+            logger_db.error(f'{chat_id}: "migraine_logs" - find ({month, year})')
             raise e
 
     def get_last_dates(self, chat_id, n):
@@ -257,7 +260,7 @@ class Database:
             return [date.strftime(dt, '%d %b %Y') for dt in dates[:-1 - n:-1]]
         except Exception as e:
             logger_db.exception(e)
-            logger_db.critical(f'{chat_id}: "migraine_logs" - find, np.unique, strftime ({n})')
+            logger_db.error(f'{chat_id}: "migraine_logs" - find, np.unique, strftime ({n})')
             raise e
 
     def get_log(self, chat_id, attack_date):
@@ -279,7 +282,7 @@ class Database:
             return user_logs
         except Exception as e:
             logger_db.exception(e)
-            logger_db.critical(f'{chat_id}: "migraine_logs" - find ({attack_date}), "current_log" - insert_many')
+            logger_db.error(f'{chat_id}: "migraine_logs" - find ({attack_date}), "current_log" - insert_many')
             raise e
 
     def add_med(self, chat_id, med):
@@ -288,7 +291,7 @@ class Database:
             logger_db.debug(f'{chat_id}: added {med} in "user_meds" ')
         except Exception as e:
             logger_db.exception(e)
-            logger_db.critical(f'{chat_id}: "user_meds" - update_one med: {med}')
+            logger_db.error(f'{chat_id}: "user_meds" - update_one med: {med}')
             raise e
 
     def get_meds(self, chat_id):
@@ -303,7 +306,7 @@ class Database:
 
         except Exception as e:
             logger_db.exception(e)
-            logger_db.critical(f'{chat_id}: "user_meds" - find')
+            logger_db.error(f'{chat_id}: "user_meds" - find')
             raise e
 
     def remove_med(self, chat_id, med):
@@ -312,7 +315,7 @@ class Database:
             logger_db.debug(f'{chat_id}: removed {med} from "user_meds"')
         except Exception as e:
             logger_db.exception(e)
-            logger_db.critical(f'{chat_id}: "user_meds" - update, pull med: {med}')
+            logger_db.error(f'{chat_id}: "user_meds" - update, pull med: {med}')
             raise e
 
     def set_meds_msg_id(self, chat_id, msg_id):
@@ -322,7 +325,7 @@ class Database:
             logger_db.debug(f'{chat_id}: added {msg_id} in "user_meds" ')
         except Exception as e:
             logger_db.exception(e)
-            logger_db.critical(f'{chat_id}: "user_meds" - update_one msg_id: {msg_id}')
+            logger_db.error(f'{chat_id}: "user_meds" - update_one msg_id: {msg_id}')
             raise e
 
     def get_meds_msg_id(self, chat_id):
@@ -339,5 +342,5 @@ class Database:
             return msg_id
         except Exception as e:
             logger_db.exception(e)
-            logger_db.critical(f'{chat_id}: "user_meds" - find_one')
+            logger_db.error(f'{chat_id}: "user_meds" - find_one')
             raise e

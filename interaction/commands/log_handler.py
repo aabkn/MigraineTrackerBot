@@ -38,7 +38,7 @@ def send_welcome(message):
 
     except Exception as e:
         logger.exception(e)
-        logger.critical(f'{message.chat.id}: {message.text}, {message}')
+        logger.error(f'{message.chat.id}: {message.text}, {message}')
         if lang is None:
             lang = 'en'
         msg_to = bot.reply_to(message, messages.error_message[lang])
@@ -58,7 +58,7 @@ def send_help(message):
 
     except Exception as e:
         logger.exception(e)
-        logger.critical(f'{message.chat.id}: {message.text}, {message}')
+        logger.error(f'{message.chat.id}: {message.text}, {message}')
         if lang is None:
             lang = 'en'
         msg_to = bot.reply_to(message, messages.error_message[lang])
@@ -101,7 +101,7 @@ def cancel(message):
 
     except Exception as e:
         logger.exception(e)
-        logger.critical(f'{message.chat.id}: {message.text}, {message}')
+        logger.error(f'{message.chat.id}: {message.text}, {message}')
         if lang is None:
             lang = 'en'
         msg_to = bot.reply_to(message, messages.error_message[lang])
@@ -128,6 +128,9 @@ def start_log(message):
         # date_keyboard = keyboards.create_keyboard(options=keyboards.date_options(datetime.date.today()))
         date_keyboard = keyboards.create_keyboard(options=keyboards.date_options(
             datetime.datetime.fromtimestamp(message.date), lang))
+        if name is None or name == '':
+            logger.warning(f'{chat_id}: no name in database {name}')
+            name = messages.default_name[lang]
         msg_to = bot.reply_to(message, messages.start_logging[lang].replace('{name}', name),
                               reply_markup=date_keyboard)
 
@@ -138,7 +141,7 @@ def start_log(message):
 
     except Exception as e:
         logger.exception(e)
-        logger.critical(f'{message.chat.id}: {message.text}, {message}')
+        logger.error(f'{message.chat.id}: {message.text}, {message}')
         if lang is None:
             lang = 'en'
         msg_to = bot.reply_to(message, messages.error_message[lang])
@@ -200,7 +203,7 @@ def start_edit(message):
 
     except Exception as e:
         logger.exception(e)
-        logger.critical(f'{message.chat.id}: {message.text}, {message}')
+        logger.error(f'{message.chat.id}: {message.text}, {message}')
         if lang is None:
             lang = 'en'
         msg_to = bot.reply_to(message, messages.error_message[lang])
@@ -215,9 +218,11 @@ def process_name(message):
         name = message.text
         logger.debug(debug_message(message))
         if name == '/cancel':
-            if not db.exists_user(chat_id):
+            if not db.exists_user(chat_id) or db.get_username(chat_id) is None:
                 db.insert_user(chat_id, messages.default_name[lang])
-            cancel(message)
+            msg_to = bot.reply_to(message, messages.cancel_name[lang],
+                                  reply_markup=keyboards.remove_keyboard)
+            logger.info(info_message(message, msg_to))
             return
         if name[0] == '/':
             msg_to = bot.reply_to(message, messages.not_name[lang])
@@ -232,7 +237,7 @@ def process_name(message):
 
     except Exception as e:
         logger.exception(e)
-        logger.critical(f'{message.chat.id}: {message.text}, {message}')
+        logger.error(f'{message.chat.id}: {message.text}, {message}')
         if lang is None:
             lang = 'en'
         msg_to = bot.reply_to(message, messages.error_message[lang])
@@ -273,7 +278,7 @@ def log(message):
             logger.warning(f'{message.chat.id}: Unexpected step {step}, message: {message}')
     except Exception as e:
         logger.exception(e)
-        logger.critical(f'{message.chat.id}: {message.text}, {message}')
+        logger.error(f'{message.chat.id}: {message.text}, {message}')
         if lang is None:
             lang = 'en'
         msg_to = bot.reply_to(message, messages.error_message[lang])

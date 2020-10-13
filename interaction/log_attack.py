@@ -42,7 +42,7 @@ def process_date(message):
 
     except Exception as e:
         logger.exception(e)
-        logger.critical(f'{message.chat.id}: {message.text}, {message}')
+        logger.error(f'{message.chat.id}: {message.text}, {message}')
         if lang is None:
             lang = 'en'
         msg_to = bot.reply_to(message, messages.error_message[lang])
@@ -88,7 +88,7 @@ def process_intensity(message):
 
     except Exception as e:
         logger.exception(e)
-        logger.critical(f'{message.chat.id}: {message.text}, {message}')
+        logger.error(f'{message.chat.id}: {message.text}, {message}')
         if lang is None:
             lang = 'en'
         msg_to = bot.reply_to(message, messages.error_message[lang])
@@ -121,7 +121,7 @@ def process_side(message):
 
     except Exception as e:
         logger.exception(e)
-        logger.critical(f'{message.chat.id}: {message.text}, {message}')
+        logger.error(f'{message.chat.id}: {message.text}, {message}')
         if lang is None:
             lang = 'en'
         msg_to = bot.reply_to(message, messages.error_message[lang])
@@ -160,7 +160,7 @@ def process_pain_start(message):
 
     except Exception as e:
         logger.exception(e)
-        logger.critical(f'{message.chat.id}: {message.text}, {message}')
+        logger.error(f'{message.chat.id}: {message.text}, {message}')
         if lang is None:
             lang = 'en'
         msg_to = bot.reply_to(message, messages.error_message[lang])
@@ -192,7 +192,7 @@ def process_medication(message):
 
     except Exception as e:
         logger.exception(e)
-        logger.critical(f'{message.chat.id}: {message.text}, {message}')
+        logger.error(f'{message.chat.id}: {message.text}, {message}')
         if lang is None:
             lang = 'en'
         msg_to = bot.reply_to(message, messages.error_message[lang])
@@ -227,7 +227,7 @@ def process_multiple_medication(message):
 
     except Exception as e:
         logger.exception(e)
-        logger.critical(f'{message.chat.id}: {message.text}, {message}')
+        logger.error(f'{message.chat.id}: {message.text}, {message}')
         if lang is None:
             lang = 'en'
         msg_to = bot.reply_to(message, messages.error_message[lang])
@@ -246,7 +246,7 @@ def print_current_log(chat_id):
         db.save_log(chat_id)
     except Exception as e:
         logger.exception(e)
-        logger.critical(f'{chat_id}')
+        logger.error(f'{chat_id}')
         raise e
 
 

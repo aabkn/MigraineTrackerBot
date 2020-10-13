@@ -155,6 +155,9 @@ nice_to_meet = {'en': 'Nice to meet you, {name}!',
 default_name = {'en': 'my friend',
                 'ru': 'мой друг'}
 
+cancel_name = {'en': 'No problem! Use /log when you want to log a headache or a migraine attack',
+               'ru': 'Без проблем! Используйте /log, когда захотите внести головную боль или мигрень '}
+
 interrupt_log = {'en': 'If you want to interrupt logging and know e.g. statistics, use '
                        'first /cancel and then the command you need',
                  'ru': 'Если вы хотите прервать логирование и узнать, например, статистику, используйте сначала '

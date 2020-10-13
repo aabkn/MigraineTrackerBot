@@ -12,7 +12,7 @@ logger = logging.getLogger('Server')
 
 
 @bot.message_handler(func=lambda message: (db.get_step(message.chat.id) == Steps.CALENDAR) and
-                                          db.get_state(message.chat.id) == States.STATS)
+                                           db.get_state(message.chat.id) == States.STATS)
 def get_calendar(message):
     lang = None
     try:
@@ -51,7 +51,7 @@ def get_calendar(message):
 
     except Exception as e:
         logger.exception(e)
-        logger.critical(f'{message.chat.id}: {message.text}, {message}')
+        logger.error(f'{message.chat.id}: {message.text}, {message}')
         if lang is None:
             lang = 'en'
         msg_to = bot.reply_to(message, messages.error_message[lang])

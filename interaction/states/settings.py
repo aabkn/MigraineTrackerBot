@@ -38,7 +38,7 @@ def change_language(message):
 
     except Exception as e:
         logger.exception(e)
-        logger.critical(f'{message.chat.id}: {message.text}, {message}')
+        logger.error(f'{message.chat.id}: {message.text}, {message}')
         if lang is None:
             lang = 'en'
         msg_to = bot.reply_to(message, messages.error_message[lang])
@@ -65,7 +65,7 @@ def choose_settings(message):
             return
     except Exception as e:
         logger.exception(e)
-        logger.critical(f'{message.chat.id}: {message.text}, {message}')
+        logger.error(f'{message.chat.id}: {message.text}, {message}')
         if lang is None:
             lang = 'en'
         msg_to = bot.reply_to(message, messages.error_message[lang])
@@ -109,7 +109,7 @@ def print_meds_list(message):
         db.set_step(chat_id, Steps.MEDICATION)
     except Exception as e:
         logger.exception(e)
-        logger.critical(f'{message.chat.id}: {message.text}, {message}')
+        logger.error(f'{message.chat.id}: {message.text}, {message}')
         if lang is None:
             lang = 'en'
         msg_to = bot.reply_to(message, messages.error_message[lang])
@@ -142,7 +142,7 @@ def add_custom_meds(message):
                               parse_mode='HTML')
     except Exception as e:
         logger.exception(e)
-        logger.critical(f'{message.chat.id}: {message.text}, {message}')
+        logger.error(f'{message.chat.id}: {message.text}, {message}')
         if lang is None:
             lang = 'en'
         msg_to = bot.reply_to(message, messages.error_message[lang])

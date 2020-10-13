@@ -40,7 +40,7 @@ def get_stats(message):
 
     except Exception as e:
         logger.exception(e)
-        logger.critical(f'{message.chat.id}: {message.text}, {message}')
+        logger.error(f'{message.chat.id}: {message.text}, {message}')
         if lang is None:
             lang = 'en'
         msg_to = bot.reply_to(message, messages.error_message[lang])
@@ -56,6 +56,9 @@ def ask_calendar_month(message):
         lang = db.get_lang(chat_id)
         name = db.get_username(chat_id)
         db.set_state(chat_id, States.STATS)
+        if name is None or name == '':
+            logger.warning(f'{chat_id}: no name in database {name}')
+            name = messages.default_name[lang]
         msg_to = bot.send_message(chat_id, messages.start_calendar[lang].replace('{name}', name),
                                   reply_markup=keyboards.month_keyboard[lang])
         logger.info(info_message(message, msg_to))
@@ -63,7 +66,7 @@ def ask_calendar_month(message):
 
     except Exception as e:
         logger.exception(e)
-        logger.critical(f'{message.chat.id}: {message.text}, {message}')
+        logger.error(f'{message.chat.id}: {message.text}, {message}')
         if lang is None:
             lang = 'en'
         msg_to = bot.reply_to(message, messages.error_message[lang])
