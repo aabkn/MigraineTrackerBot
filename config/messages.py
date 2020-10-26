@@ -330,7 +330,8 @@ start_calendar = {'en': 'Hi, {name}! Please, choose the month of current year yo
                         'календарь приступов.\nЕсли вы хотите получить календарь для месяца другого месяца, введите '
                         'месяц и год в формате мм-гг (например, 08-20) '}
 
-month_names = {'en': calendar.month_name,
+month_names = {'en': ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August',
+                      'September', 'October', 'November', 'December'],
                'ru': ['', 'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь',
                       'Октябрь', 'Ноябрь', 'Декабрь']}
 
