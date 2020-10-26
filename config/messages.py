@@ -103,9 +103,14 @@ start_logging = {'en': 'Hi, {name}! You started to log a headache or migraine at
                  # 'вчера, во вторник_) '}
                  }
 
-log_immediately = {'en': 'I canceled the previous operation and will immediately log '
+log_immediately_cancel = {'en': 'I canceled the previous operation and logged '
+                                "this attack. I'm so sorry to know you're experiencing the pain now \U0001f614",
+                          'ru': 'Я отменил предыдущую операцию и залогировал этот приступ. Мне очень жаль, что'
+                                ' вы испытываете боль сейчас \U0001f614'}
+
+log_immediately = {'en': 'I logged '
                          "this attack. I'm so sorry to know you're experiencing the pain now \U0001f614",
-                   'ru': 'Я отменил предыдущую операцию и сразу же залогирую эту атаку. Мне очень жаль, что'
+                   'ru': 'Я залогировал этот приступ. Мне очень жаль, что'
                          ' вы испытываете боль сейчас \U0001f614'}
 
 already_edit = {'en': "I've already started editing. If you want to cancel or"

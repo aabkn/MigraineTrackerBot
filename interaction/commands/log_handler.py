@@ -74,7 +74,11 @@ def migraine_now(message):
         state = db.get_state(chat_id)
         if state in [States.LOGGING, States.EDITING]:
             db.delete_current_log(chat_id)
-        msg_to = bot.send_message(chat_id, messages.log_immediately[lang], reply_markup=keyboards.remove_keyboard)
+        if state == States.INACTIVE:
+            msg_to = bot.send_message(chat_id, messages.log_immediately[lang], reply_markup=keyboards.remove_keyboard)
+        else:
+            msg_to = bot.send_message(chat_id, messages.log_immediately_cancel[lang],
+                                      reply_markup=keyboards.remove_keyboard)
         db.log_migraine(chat_id, {'chat_id': chat_id, 'date': datetime.datetime.now()})
         db.save_log(chat_id)
         db.set_step(chat_id, Steps.INACTIVE)
