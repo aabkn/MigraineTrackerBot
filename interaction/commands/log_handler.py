@@ -65,6 +65,30 @@ def send_help(message):
         logger.info(info_message(message, msg_to))
 
 
+@bot.message_handler(commands=['migraine'])
+def migraine_now(message):
+    lang = None
+    try:
+        chat_id = message.chat.id
+        lang = db.get_lang(chat_id)
+        state = db.get_state(chat_id)
+        if state in [States.LOGGING, States.EDITING]:
+            db.delete_current_log(chat_id)
+        msg_to = bot.send_message(chat_id, messages.log_immediately[lang], reply_markup=keyboards.remove_keyboard)
+        db.log_migraine(chat_id, {'chat_id': chat_id, 'date': datetime.datetime.now()})
+        db.save_log(chat_id)
+        db.set_step(chat_id, Steps.INACTIVE)
+        db.set_state(chat_id, States.INACTIVE)
+        logger.info(info_message(message, msg_to))
+    except Exception as e:
+        logger.exception(e)
+        logger.error(f'{message.chat.id}: {message.text}, {message}')
+        if lang is None:
+            lang = 'en'
+        msg_to = bot.reply_to(message, messages.error_message[lang])
+        logger.info(info_message(message, msg_to))
+
+
 @bot.message_handler(commands=['cancel'])
 def cancel(message):
     lang = None

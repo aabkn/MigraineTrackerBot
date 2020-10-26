@@ -5,6 +5,7 @@ from config.messages import attack_start_dict
 from migraine_bot import db, bot
 import logging
 import locale
+import dateparser
 from log_config.log_helper import debug_message, info_message
 
 logger = logging.getLogger('Server')
@@ -23,9 +24,9 @@ def process_date(message):
             attack_date = datetime.date.today() - datetime.timedelta(days=days_delta)
             attack_date = datetime.datetime(attack_date.year, attack_date.month, attack_date.day)
         else:
-            try:
-                attack_date = datetime.datetime.strptime(date, '%d-%m-%y')
-            except ValueError:
+            attack_date = dateparser.parse(date, settings={'DATE_ORDER': 'DMY'})
+            # datetime.datetime.strptime(date, '%d-%m-%y')
+            if attack_date is None:
                 msg_to = bot.reply_to(message, messages.not_date[lang],
                                       reply_markup=keyboards.create_keyboard(date_options))
                 logger.info(info_message(message, msg_to))

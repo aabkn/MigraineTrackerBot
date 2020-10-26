@@ -48,6 +48,8 @@ def get_calendar(message):
         except FileNotFoundError as not_found_e:
             logger.exception(not_found_e)
             logger.warning(f'{chat_id}: File {file_name} not found, {message}')
+            msg_to = bot.reply_to(message, messages.error_message[lang])
+            logger.info(info_message(message, msg_to))
 
     except Exception as e:
         logger.exception(e)

@@ -59,8 +59,24 @@ def ask_calendar_month(message):
         if name is None or name == '':
             logger.warning(f'{chat_id}: no name in database {name}')
             name = messages.default_name[lang]
-        msg_to = bot.send_message(chat_id, messages.start_calendar[lang].replace('{name}', name),
-                                  reply_markup=keyboards.month_keyboard[lang])
+
+        month = datetime.datetime.today().month
+        year = datetime.datetime.today().year
+        month_log = db.get_stats_month(chat_id, month=month, year=year)
+        file_name = visualisation.generate_calendar(chat_id, lang, month_log, month, year)
+        try:
+            with open(file_name, 'rb') as calendar_img:
+                msg_to = bot.send_photo(chat_id, calendar_img,
+                                        caption=messages.sent_current_calendar[lang].replace('{name}', name),
+                                        reply_markup=keyboards.month_keyboard[lang])
+                logger.info(info_message(message, msg_to))
+            os.remove(file_name)
+        except FileNotFoundError as not_found_e:
+            logger.exception(not_found_e)
+            logger.error(f'{chat_id}: File {file_name} not found, {message}')
+            msg_to = bot.reply_to(message, messages.error_message[lang])
+            logger.info(info_message(message, msg_to))
+
         logger.info(info_message(message, msg_to))
         db.set_step(chat_id, Steps.CALENDAR)
 
@@ -71,5 +87,3 @@ def ask_calendar_month(message):
             lang = 'en'
         msg_to = bot.reply_to(message, messages.error_message[lang])
         logger.info(info_message(message, msg_to))
-
-

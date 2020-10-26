@@ -91,11 +91,22 @@ interrupt_edit = {'en': "If you want to interrupt editing and start logging or k
 start_logging = {'en': 'Hi, {name}! You started to log a headache or migraine attack.\n'
                        'Sorry to hear that! '
                        'When was the attack? \n'
-                       'There is no date you need?  \U0001F914 You can choose one of the listed options or '
-                       'enter the date in the format dd-mm-yy (e.g. 12-08-20). ',
+                       'There is no date you need?  \U0001F914 You can '
+                       'enter the date in the format dd-mm (for the current year) or dd-mm-yy (e.g. 12-08-19). ',
+                 # 'You '
+                 # "might type also relative date (e.g. _a week ago, yesterday, on Tuesday_), ",
                  'ru': 'Привет, {name}! Мне жаль, что у вас был приступ! Когда он был? \n'
-                       'Нет подходящей даты? \U0001F914 Вы можете выбрать один из '
-                       'предложенных вариантов или ввести дату в формате дд-мм-гг (например, 12-08-20). '}
+                       'Нет подходящей даты? \U0001F914 Вы можете'
+                       ' ввести дату в формате дд-мм (для текущего года) или '
+                       'дд-мм-гг (например, 12-08-20) '
+                 # 'или использовать относительную дату (например, _неделю назад, '
+                 # 'вчера, во вторник_) '}
+                 }
+
+log_immediately = {'en': 'I canceled the previous operation and will immediately log '
+                         "this attack. I'm so sorry to know you're experiencing the pain now \U0001f614",
+                   'ru': 'Я отменил предыдущую операцию и сразу же залогирую эту атаку. Мне очень жаль, что'
+                         ' вы испытываете боль сейчас \U0001f614'}
 
 already_edit = {'en': "I've already started editing. If you want to cancel or"
                       " log, use /cancel.",
@@ -108,14 +119,15 @@ edit_location = {'en': 'Ok, let\'s edit the location of pain. '
                        "болело сильнее "}
 
 edit_intensity = {'en': 'You can now tell a correct value of the pain level from 0 to 10. ',
-                  'ru': "Теперь можете указать правильное значение интенсивности боли от 0 до 10. "}
+                  'ru': "Теперь можете указать интенсивность боли от 0 до 10. "}
 
 edit_date = {'en': 'Please, choose now the correct option or enter the date in '
-                   'the format dd-mm-yy',
-             'ru': "Выберите, пожалуйста, теперь правильный вариант или введите дату в формате дд-мм-гг "}
+                   'the format dd-mm or dd-mm-yy',
+             'ru': "Выберите, пожалуйста, теперь дату приступа из предложенных вариантов"
+                   " или введите её в формате дд-мм или дд-мм-гг "}
 
 edit_pain_start = {'en': 'Sure, just choose the correct option of the pain start',
-                   'ru': "Конечно, просто выберите правильный вариант времени начала боли "}
+                   'ru': "Конечно, просто выберите время начала боли "}
 
 ask_what_edit = {'en': 'What would you like to edit?',
                  'ru': 'Что вы бы хотели отредактировать? '}
@@ -155,8 +167,8 @@ nice_to_meet = {'en': 'Nice to meet you, {name}!',
 default_name = {'en': 'my friend',
                 'ru': 'мой друг'}
 
-cancel_name = {'en': 'No problem! Use /log when you want to log a headache or a migraine attack',
-               'ru': 'Без проблем! Используйте /log, когда захотите внести головную боль или мигрень '}
+cancel_name = {'en': 'No problem! You can change your name later in /settings',
+               'ru': 'Без проблем! Вы можете поменять ваше имя позже в /settings '}
 
 interrupt_log = {'en': 'If you want to interrupt logging and know e.g. statistics, use '
                        'first /cancel and then the command you need',
@@ -245,8 +257,9 @@ not_name = {'en': "Before proceeding to commands, let me first know you. What's 
             'ru': "Перед тем, как мы перейдем к командам, давай сначала познакомимся. Как вас зовут? "}
 
 not_date = {'en': "I can't interpret your answer as a date. Please, enter the date"
-                  " in the format dd-mm-yy or choose one of the listed options.",
-            'ru': "Я не могу интерпретирвать ваш ответ как дату. Пожалуйста, введите дату в формате дд-мм-гг или"
+                  " in the format dd-mm or dd-mm-yy or choose one of the listed options.",
+            'ru': "Я не могу интерпретирвать ваш ответ как дату. Пожалуйста, введите дату в формате дд-мм или"
+                  " дд-мм-гг или"
                   " выберите один из предложенных вариантов. "}
 
 choose_listed = {'en': 'Please, choose one of the listed options or use /cancel to cancel'
@@ -266,7 +279,6 @@ log_dict = {'en': {'date': 'Date', 'intensity': 'Pain intensity', 'side': 'Pain 
                    'pain_start': 'Pain started', 'medication': 'Medication taken'},
             'ru': {'date': 'Дата', 'intensity': 'Интенсивность боли', 'side': 'Местоположение очага боли',
                    'pain_start': 'Боль началась', 'medication': 'Было принято обезболивающее'}}
-
 
 attack_start_dict = {'night': 0, 'morning': 6, 'day': 12, 'evening': 18,
                      'ночью': 0, 'утром': 6, 'днем': 12, 'вечером': 18}
@@ -294,6 +306,15 @@ not_month = {'en': 'Please, choose one of the listed options or '
 sent_calendar = {'en': 'Sure, here you are! To continue just choose another month or '
                        'press Finish otherwise. ',
                  'ru': 'Разумеется, вот и календарь! Чтобы продолжить выберите другой месяц или нажмите Закончить. '}
+
+sent_current_calendar = {'en': 'Hi, {name}! Here is calendar of attacks for the current month. '
+                               '\nIf you want to get a calendar '
+                               'for another '
+                               'month, just choose this month or enter the month and year in the '
+                               'format mm-yy (e.g. 08-20)',
+                         'ru': 'Привет, {name}! Вот календарь приступов за текущий месяц. '
+                               '\nЕсли вы хотите получить календарь за другой месяц, просто '
+                               'выберите этот месяц или введите месяц и год в формате мм-гг (например, 08-20)'}
 
 start_calendar = {'en': 'Hi, {name}! Please, choose the month of current year you want '
                         'to get a calendar of attacks for.'
