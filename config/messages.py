@@ -1,5 +1,4 @@
 from config.config import terms
-import calendar
 
 help_message = {'en': "Hey, I am a bot for tracking headaches and migraines! Here is the list of "
                       "the possible commands:\n/log - log an attack"
@@ -37,8 +36,30 @@ start_message = {'en': "Before we start, please, read carefully "
                        " пожалуйста, дождитесь завершения разработки, об этом будет написано в описании бота на "
                        "странице профиля."}
 
-ask_name_message = {'en': "Now let's know each other. What's your name?",
-                    'ru': "Теперь давай познакомимся. Как вас зовут?"}
+ask_name_message = {'en': "Now let's know each other. What's your name?\nIf you prefer not to tell me your name "
+                          "just use /cancel. ",
+                    'ru': "Теперь давай познакомимся. Как вас зовут?\nЕсли вы предпочитаете не говорить мне свое "
+                          "имя, просто используйте /cancel. "}
+
+settings_name = "Now you can set your name and your preferred medications in /settings. Name is just " \
+                "to know how to call you (optional), and the list of your medications will appear as buttons" \
+                " for your " \
+                "convenience when you log "\
+                "a headache or migraine attack. \nTo change language use /language\n\n"\
+                "\U0001F1F7\U0001F1FA Теперь вы можете указать в /settings свое имя и препараты," \
+                " которые вы обычно принимаете. Имя"\
+                " для того, чтобы знать, как к вам обращаться (опционально), а " \
+                "список препаратов будет появляться " \
+                "в виде кнопок для вашего удобства во "\
+                "время логирования приступа головной боли или мигрени. " \
+                "Чтобы поменять язык, используйте "\
+                "/language (по умолчанию английский)"
+
+delete_name = {'en': "Sure, it's your choice. I just forgot your name, my friend! ",
+               'ru': "Конечно, это ваш выбор. Я просто забыл ваше имя, мой друг!"}
+
+change_lang_name = {'en': "Sure! I changed the language. So what's your name?",
+                    'ru': "Конечно! Я поменял язык. Как вас зовут?"}
 
 error_message = {'en': "Oh no! Something went wrong! Don't worry, "
                        "I will figure it out!",
@@ -172,8 +193,8 @@ nice_to_meet = {'en': 'Nice to meet you, {name}!',
 default_name = {'en': 'my friend',
                 'ru': 'мой друг'}
 
-cancel_name = {'en': 'No problem! You can change your name later in /settings',
-               'ru': 'Без проблем! Вы можете поменять ваше имя позже в /settings '}
+cancel_name = {'en': 'No problem! You can set or change your name later in /settings',
+               'ru': 'Без проблем! Вы можете указать или поменять ваше имя позже в /settings '}
 
 interrupt_log = {'en': 'If you want to interrupt logging and know e.g. statistics, use '
                        'first /cancel and then the command you need',
@@ -342,8 +363,18 @@ start_settings = {'en': "Hi! Let's personalize your experience. Do you want to c
                   'ru': "Привет! Давайте сделаем логирование еще более удобным. Вы бы хотели изменить имя или "
                         "редактировать список предпочитаемых обезболивающих? "}
 
-change_name = {'en': "Ok, you decided to change the name! Just enter your name here. ",
-               'ru': "Хорошо, вы решили изменить свое имя! Просто введите свое имя здесь. "}
+change_name = {'en': "Ok, you decided to set or change the name! Just enter your name here. "
+                     #"If you want to leave everything as it was, just use /cancel to quit settings."
+                     #"\nIf you want me not to "
+                     #"use anymore your name you told me earlier, use /delete_name",
+                     "\nUse /cancel to quit settings\nand /delete_name to delete your set name",
+               'ru': "Хорошо, вы решили сообщить или изменить свое имя! Просто введите свое имя здесь. "
+                     #"Если вы хотите оставить все как прежде, просто используйте /cancel, чтобы выйти из настроек"
+                     #"\nЕсли вы хотите, чтобы "
+                     #"я больше не использовал введенное ранее вами имя, используйте /delete_name"}
+                     "\nИспользуйте /cancel, чтобы выйти из настроек,\nи /delete_name,"
+                     " чтобы удалить установленное имя."
+               }
 
 current_meds_list = {'en': "Here is your current list of medications: ",
                      'ru': "Вот ваш текущий список обезболивающих: "}

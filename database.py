@@ -128,7 +128,7 @@ class Database:
                                                           [{"$set": {field_key: {"$concat":
                                                                                      ["$" + field_key, ", ",
                                                                                       migraine_data[field_key]]}}}])
-                logger_db.debug(f'{chat_id}: appended to {field_key} in "current log" collection {migraine_data}')
+                    logger_db.debug(f'{chat_id}: appended to {field_key} in "current log" collection {migraine_data}')
             else:
                 self.current_log_table.update_one({'chat_id': chat_id}, {"$set": migraine_data}, upsert=True)
                 logger_db.debug(f'{chat_id}: logged migraine details to "current log" collection {migraine_data}')
@@ -219,7 +219,7 @@ class Database:
                                    f'(should be chat_id, _id, last_modified, date), {df.info()}')
 
             username = self.get_username(chat_id)
-            if username == default_name['en'] or username == default_name['ru']:
+            if username == default_name['en'] or username == default_name['ru'] or username is None:
                 username = 'migraine'
             filename = f'/tmp/{username}_logs_{date.today().strftime("%d-%m-%Y")}.csv'
             df.to_csv(filename)

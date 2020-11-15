@@ -56,7 +56,8 @@ def choose_settings(message):
             msg_to = bot.send_message(message.chat.id, messages.change_name[lang],
                                       reply_markup=keyboards.remove_keyboard)
             logger.info(info_message(message, msg_to))
-            bot.register_next_step_handler(msg_to, log_handler.process_name)
+            #bot.register_next_step_handler(msg_to, log_handler.process_name)
+            db.set_step(message.chat.id, Steps.NAME)
         elif message.text.capitalize() in ['Medications', 'Обезболивающие']:
             print_meds_list(message)
         else:
@@ -140,6 +141,39 @@ def add_custom_meds(message):
                               message_id=msg_id,
                               reply_markup=keyboards.create_med_keyboard(selected_meds, lang),
                               parse_mode='HTML')
+    except Exception as e:
+        logger.exception(e)
+        logger.error(f'{message.chat.id}: {message.text}, {message}')
+        if lang is None:
+            lang = 'en'
+        msg_to = bot.reply_to(message, messages.error_message[lang])
+        logger.info(info_message(message, msg_to))
+
+
+@bot.message_handler(func=lambda message: (db.get_step(message.chat.id) == Steps.NAME) and
+                                           db.get_state(message.chat.id) == States.SETTINGS)
+def process_name(message):
+    lang = None
+    try:
+        chat_id = message.chat.id
+        lang = db.get_lang(chat_id)
+        name = message.text
+        logger.debug(debug_message(message))
+        if name == '/delete_name':
+            msg_to = bot.send_message(chat_id, messages.delete_name[lang])
+            logger.info(info_message(message, msg_to))
+            db.insert_user(chat_id, None)
+            return
+        if name[0] == '/':
+            msg_to = bot.reply_to(message, messages.not_name[lang])
+            logger.info(info_message(message, msg_to))
+            #bot.register_next_step_handler(msg_to, process_name)
+            return
+        db.insert_user(chat_id, name)
+
+        msg_to = bot.reply_to(message, messages.nice_to_meet[lang].replace('{name}', name))
+        logger.info(info_message(message, msg_to))
+
     except Exception as e:
         logger.exception(e)
         logger.error(f'{message.chat.id}: {message.text}, {message}')

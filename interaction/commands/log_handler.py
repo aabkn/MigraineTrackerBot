@@ -1,4 +1,4 @@
-from config.config import States, Steps, n_attack_days, allowed_ids
+from config.config import States, Steps, n_attack_days
 import datetime
 from config import keyboards, messages
 from migraine_bot import db, bot
@@ -14,25 +14,26 @@ def send_welcome(message):
     lang = None
     try:
         chat_id = message.chat.id
+        user_exists = db.exists_user(message.chat.id)
         lang = db.get_lang(chat_id, return_none=True)
         if lang is None:
             lang = message.from_user.language_code
             if lang is None:
                 lang = 'en'
-            db.set_lang(chat_id, lang)
+            #db.set_lang(chat_id, lang)
         msg_to = bot.send_message(chat_id, messages.help_message[lang] + '\n\n' +
                                   messages.start_message[lang],
                                   parse_mode='Markdown')
         logger.info(info_message(message, msg_to))
 
-        if not (db.exists_user(message.chat.id)) or db.get_username(chat_id) is None:
+        if not user_exists:
             db.set_state(chat_id, States.INACTIVE)
             db.set_step(chat_id, Steps.INACTIVE)
-
-            msg = bot.send_message(chat_id, messages.ask_name_message[lang])
+            db.set_lang(chat_id, lang)
+            msg = bot.send_message(chat_id, messages.settings_name)
 
             logger.info(f'{chat_id}: Sent "{msg.text}"')
-            bot.register_next_step_handler(msg, process_name)
+            # bot.register_next_step_handler(msg, process_name)
 
         logger.debug(debug_message(message))
 
@@ -157,7 +158,7 @@ def start_log(message):
         date_keyboard = keyboards.create_keyboard(options=keyboards.date_options(
             datetime.datetime.fromtimestamp(message.date), lang))
         if name is None or name == '':
-            logger.warning(f'{chat_id}: no name in database {name}')
+            # logger.warning(f'{chat_id}: no name in database {name}')
             name = messages.default_name[lang]
         msg_to = bot.reply_to(message, messages.start_logging[lang].replace('{name}', name),
                               reply_markup=date_keyboard)
@@ -238,40 +239,6 @@ def start_edit(message):
         logger.info(info_message(message, msg_to))
 
 
-def process_name(message):
-    lang = None
-    try:
-        chat_id = message.chat.id
-        lang = db.get_lang(chat_id)
-        name = message.text
-        logger.debug(debug_message(message))
-        if name == '/cancel':
-            if not db.exists_user(chat_id) or db.get_username(chat_id) is None:
-                db.insert_user(chat_id, messages.default_name[lang])
-            msg_to = bot.reply_to(message, messages.cancel_name[lang],
-                                  reply_markup=keyboards.remove_keyboard)
-            logger.info(info_message(message, msg_to))
-            return
-        if name[0] == '/':
-            msg_to = bot.reply_to(message, messages.not_name[lang])
-            logger.info(info_message(message, msg_to))
-            bot.register_next_step_handler(msg_to, process_name)
-            return
-
-        db.insert_user(chat_id, name)
-
-        msg_to = bot.reply_to(message, messages.nice_to_meet[lang].replace('{name}', name))
-        logger.info(info_message(message, msg_to))
-
-    except Exception as e:
-        logger.exception(e)
-        logger.error(f'{message.chat.id}: {message.text}, {message}')
-        if lang is None:
-            lang = 'en'
-        msg_to = bot.reply_to(message, messages.error_message[lang])
-        logger.info(info_message(message, msg_to))
-
-
 @bot.message_handler(func=lambda message: db.get_state(message.chat.id) == States.LOGGING)
 def log(message):
     lang = None
@@ -279,6 +246,15 @@ def log(message):
         logger.debug(debug_message(message))
         lang = db.get_lang(message.chat.id)
         step = db.get_step(message.chat.id)
+        '''if message.text == '/language':
+            to_lang = 'en'
+            if lang == 'en':
+                to_lang = 'ru'
+            msg_to = bot.send_message(message.chat.id, messages.changed_language[to_lang])
+            db.set_lang(message.chat.id, to_lang)
+            logger.info(info_message(message, msg_to))
+            # TODO: return to the previous step of logging and change the reply_markup (different language) 
+            return'''
         if message.text[0] == '/':
             msg_to = bot.reply_to(message, messages.interrupt_log[lang])
             logger.info(info_message(message, msg_to))

@@ -1,7 +1,6 @@
 from config.config import States, Steps
 from config import keyboards
 from migraine_bot import db, bot
-from interaction.commands import log_handler
 import logging
 from config import messages
 from log_config.log_helper import debug_message, info_message

@@ -3,7 +3,6 @@ from migraine_bot import bot, db
 from config.config import States, Steps
 import os
 from config import keyboards
-import calendar
 from config import messages
 import datetime
 import logging
@@ -57,7 +56,7 @@ def ask_calendar_month(message):
         name = db.get_username(chat_id)
         db.set_state(chat_id, States.STATS)
         if name is None or name == '':
-            logger.warning(f'{chat_id}: no name in database {name}')
+            # logger.warning(f'{chat_id}: no name in database {name}')
             name = messages.default_name[lang]
 
         month = datetime.datetime.today().month
