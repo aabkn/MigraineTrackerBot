@@ -12,8 +12,13 @@ def generate_calendar(chat_id, lang, full_data, month, year):
     start = datetime.datetime(year, month, 1)
     dates = [start + datetime.timedelta(days=i) for i in range(calendar.monthrange(year, month)[1])]
     weeks, days = zip(*[d.isocalendar()[1:] for d in dates])
+
+    # for January: if the first week of January is not full => in isocalendar = 52
+    weeks = np.array(weeks)
+    if weeks[0] > weeks[-1]:
+        weeks[weeks == weeks[0]] = 0
     first_week = min(weeks)
-    weeks = np.array(weeks) - first_week
+    weeks = weeks - first_week
     days = np.array(days) - 1
     nweeks = max(weeks) + 1
 
