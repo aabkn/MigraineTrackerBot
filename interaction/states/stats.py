@@ -37,6 +37,8 @@ def get_calendar(message):
         else:
             month = keyboards.months_list[lang].index(message.text) + 1
             year = datetime.datetime.today().year
+            if month > datetime.datetime.today().month:
+                year -= 1
         month_log = db.get_stats_month(chat_id, month=month, year=year)
         file_name = visualisation.generate_calendar(chat_id, lang, month_log, month, year)
         try:
