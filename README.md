@@ -13,10 +13,9 @@ Migraine Tracker bot is a telegram bot for tracking headaches and migraines. The
  * add logging of taken medication
  * personalization: users can create a list of medication they usually take
  * choose language: Russian, English
- 
-![Start logging screenshot](/images/start_log.jpg)
-
-![Settings screenshot](/images/settings.jpg)
-
+ <p float="left">
+ <img src="/images/start_log.jpg" alt="Start logging screenshot" width="400" float="right"/>
+ <img src="/images/settings.jpg" alt="Settings screenshot" width="400" float="left"/>
+</p>
 
  
