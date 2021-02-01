@@ -7,6 +7,7 @@ import logging
 import locale
 import dateparser
 from log_config.log_helper import debug_message, info_message
+from dateutil.relativedelta import relativedelta
 
 logger = logging.getLogger('Server')
 
@@ -25,6 +26,10 @@ def process_date(message):
             attack_date = datetime.datetime(attack_date.year, attack_date.month, attack_date.day)
         else:
             attack_date = dateparser.parse(date, settings={'DATE_ORDER': 'DMY'})
+
+            if (attack_date.month > datetime.date.today().month) & (attack_date.year == datetime.date.today().year):
+                attack_date -= relativedelta(years=1)
+
             # datetime.datetime.strptime(date, '%d-%m-%y')
             if attack_date is None:
                 msg_to = bot.reply_to(message, messages.not_date[lang],
