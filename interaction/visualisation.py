@@ -4,7 +4,7 @@ import numpy as np
 from matplotlib.colors import LinearSegmentedColormap, ListedColormap
 import calendar
 from config import messages
-
+import pandas as pd
 
 def generate_calendar(chat_id, lang, full_data, month, year):
     plt.switch_backend('Agg')
@@ -13,16 +13,10 @@ def generate_calendar(chat_id, lang, full_data, month, year):
     dates = [start + datetime.timedelta(days=i) for i in range(calendar.monthrange(year, month)[1])]
     weeks, days = zip(*[d.isocalendar()[1:] for d in dates])
 
-    # for January: if the first week of January is not full => in isocalendar = 52
-
-    if weeks[0] > weeks[-1]:
-        first_week_ind = weeks.index(1)
-        weeks = np.array(weeks)
-        weeks[first_week_ind:] += max(weeks)
-
     weeks = np.array(weeks)
-    first_week = min(weeks)
-    weeks = weeks - first_week
+    unique_weeks = pd.unique(weeks)
+    weeks = [np.where(unique_weeks == weeks[i])[0][0] for i in range(len(weeks))]
+
     days = np.array(days) - 1
     nweeks = max(weeks) + 1
 
@@ -32,11 +26,12 @@ def generate_calendar(chat_id, lang, full_data, month, year):
     exists_unfilled = False
     for entry in full_data:
         week, day = entry['date'].isocalendar()[1:]
+        week = np.where(unique_weeks == week)[0][0]
         if entry.get('intensity') is None:
-            calendar_grid_unfilled[week - first_week, day - 1] = -1
+            calendar_grid_unfilled[week, day - 1] = -1
             exists_unfilled = True
         else:
-            calendar_grid[week - first_week, day - 1] = entry['intensity']
+            calendar_grid[week, day - 1] = entry['intensity']
 
     if not exists_unfilled:
         calendar_grid_unfilled = None
