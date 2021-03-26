@@ -49,18 +49,18 @@ def edit(message):
             else:
                 if chosen_option.lower() in ['intensity', 'интенсивность']:
                     msg_to = bot.send_message(chat_id, messages.edit_intensity[lang],
-                                              reply_markup=keyboards.intensity_keyboard)
+                                              reply_markup=keyboards.intensity_keyboard[lang][False])
                     db.set_step(chat_id, Steps.INTENSITY)
 
                 elif chosen_option.lower() in ['pain location', 'расположение боли']:
                     msg_to = bot.send_message(chat_id,
                                               messages.edit_location[lang],
-                                              reply_markup=keyboards.location_keyboard[lang])
+                                              reply_markup=keyboards.location_keyboard[lang][False])
                     db.set_step(chat_id, Steps.LOCATION)
                 elif chosen_option.lower() in ['pain start', 'время начала']:
                     msg_to = bot.send_message(chat_id,
                                               messages.edit_pain_start[lang],
-                                              reply_markup=keyboards.pain_start_keyboard[lang])
+                                              reply_markup=keyboards.pain_start_keyboard[lang][False])
                     db.set_step(chat_id, Steps.ATTACK_START)
                 elif chosen_option.lower() in ['date', 'дата']:
                     date_keyboard = keyboards.create_keyboard(options=keyboards.date_options(datetime.date.today(),

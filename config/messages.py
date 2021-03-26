@@ -411,3 +411,11 @@ already_language = {'en': "Good, I'm already in English!",
 changed_language = {'en': "Now I'm in English! Use /help to know about all possible commands and /log to log an attack",
                     'ru': "Теперь я на русском! Используйте /help, чтобы узнать о всех возможных командах и /log, чтобы"
                           " залогировать приступ головной боли или мигрени "}
+
+add_skip_buttons = {'en': 'Ok, I added a possibility to skip a question or all questions except for the '
+                          'first question about an attack date.',
+                    'ru': 'Ок, я добавил возможность пропускать вопрос или все вопросы, кроме первого '
+                          'о дате приступа.'}
+
+remove_skip_buttons = {'en': 'No problem, I removed skip buttons. Less buttons, easier to log! ',
+                       'ru': 'Без проблем, я убрал кнопки для пропуска. Меньше кнопок, легче логировать! '}

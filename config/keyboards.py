@@ -19,7 +19,14 @@ def date_options(date, lang):
     return options
 
 
-def create_keyboard(options, rows=2):
+def create_keyboard_dict(buttons_dict, **kwargs):
+    return {'en': {False: create_keyboard(options=buttons_dict['en'], **kwargs),
+                   True: create_keyboard(options=buttons_dict['en'], lang='en', skip=True, **kwargs)},
+            'ru': {False: create_keyboard(options=buttons_dict['ru'], **kwargs),
+                   True: create_keyboard(options=buttons_dict['ru'], lang='ru', skip=True, **kwargs)}}
+
+
+def create_keyboard(options, rows=2, lang='en', skip=False):
     items = []
     if (len(options) > 6) and (rows == 'auto'):
         rows = len(options) // 4
@@ -36,6 +43,10 @@ def create_keyboard(options, rows=2):
     for r in range(rows - 1):
         keyboard.row(*items[len(options) // rows * r:len(options) // rows * (r + 1)])
     keyboard.row(*items[len(options) // rows * (rows - 1):])
+
+    if skip:
+        keyboard.row(*skip_row[lang])
+
     return keyboard
 
 
@@ -65,17 +76,20 @@ def create_med_keyboard(selected_meds, lang):
     return markup
 
 
+skip_row = {'en': ['Skip \u23E9', 'Skip all \u23ED\uFE0F'],
+            'ru': ['Пропустить \u23E9', 'Пропустить все \u23ED\uFE0F']}
+
 location_buttons = {'en': ['Both sides', 'Left', 'Right'],
                     'ru': ['С обеих сторон', 'Слева', 'Справа']}
-location_keyboard = {'en': create_keyboard(options=location_buttons['en']),
-                     'ru': create_keyboard(options=location_buttons['ru'])}
+location_keyboard = create_keyboard_dict(location_buttons)
 
-intensity_keyboard = create_keyboard(options=range(1, 11))
+intensity_keyboard = create_keyboard_dict({'en': range(1, 11), 'ru': range(1, 11)})
+#{False: create_keyboard(options=range(1, 11)),
+                      #True: create_keyboard(options=range(1, 11), skip=True)}
 
 pain_start_buttons = {'en': ['Morning', 'Day', 'Evening', 'Night'],
                       'ru': ['Утром', 'Днем', 'Вечером', 'Ночью']}
-pain_start_keyboard = {'en': create_keyboard(options=pain_start_buttons['en']),
-                       'ru': create_keyboard(options=pain_start_buttons['ru'])}
+pain_start_keyboard = create_keyboard_dict(pain_start_buttons)
 
 edit_buttons = {'en': ['Date', 'Intensity', 'Pain location', 'Pain start', 'Medication', 'Edit another attack'],
                 'ru': ['Дата', 'Интенсивность', 'Расположение боли', 'Время начала',
@@ -95,8 +109,8 @@ month_keyboard['ru'].row('Закончить')
 
 language_keyboard = create_keyboard(options=['English', 'Русский'])
 
-settings_buttons = {'en': ['Name', 'Medications'],
-                    'ru': ['Имя', 'Обезболивающие']}
+settings_buttons = {'en': ['Name', 'Medications', 'Skip buttons'],
+                    'ru': ['Имя', 'Обезболивающие', 'Кнопки "пропустить"']}
 settings_keyboard = {'en': create_keyboard(options=settings_buttons['en']),
                      'ru': create_keyboard(options=settings_buttons['ru'])}
 
@@ -104,13 +118,14 @@ settings_keyboard = {'en': create_keyboard(options=settings_buttons['en']),
 remove_keyboard = telebot.types.ReplyKeyboardRemove(selective=False)
 
 default_meds_list = {'en': ['Ibuprofen', 'Aspirin', 'Paracetamol', 'Diclofenac', 'Caffeine',
-                    'Eletriptan (Relpax)', 'Sumatriptan',
-                    'Naratriptan', 'Zolmitriptan (Zomig)'],
-             'ru': ['Ибупрофен', 'Аспирин', 'Парацетамол', 'Диклофенак', 'Кофеин', 'Элетриптан (Релпакс)',
-                    'Суматриптан', 'Наратриптан', 'Золмитриптан (Зомиг) ']}
+                            'Eletriptan (Relpax)', 'Sumatriptan',
+                            'Naratriptan', 'Zolmitriptan (Zomig)'],
+                     'ru': ['Ибупрофен', 'Аспирин', 'Парацетамол', 'Диклофенак', 'Кофеин', 'Элетриптан (Релпакс)',
+                            'Суматриптан', 'Наратриптан', 'Золмитриптан (Зомиг) ']}
 
 meds_keyboard_row = {'en': ['No', 'Add multiple'],
                      'ru': ['Нет', 'Добавить несколько']}
 
 meds_keyboard_multiple_row = {'en': 'Done \u2705',
                               'ru': 'Готово \u2705'}
+

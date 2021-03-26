@@ -80,6 +80,30 @@ class Database:
             logger_db.error(f'{chat_id}: "users_table" - update')
             raise e
 
+    def get_skip_preference(self, chat_id):
+        try:
+            if self.exists_user(chat_id):
+                user = self.users_table.find_one({'chat_id': chat_id})
+            else:
+                return None
+            if user.get('skip') is None:
+                return None
+            return user['skip']
+        except Exception as e:
+            logger_db.exception(e)
+            logger_db.error(f'{chat_id}: "users_table" - find_one')
+            raise e
+
+    def set_skip_preference(self, chat_id, skip_pref):
+        try:
+            self.users_table.update_one({'chat_id': chat_id}, {'$set': {'chat_id': chat_id, 'skip': skip_pref}},
+                                        upsert=True)
+            logger_db.debug(f'{chat_id}: set skip preference {skip_pref}')
+        except Exception as e:
+            logger_db.exception(e)
+            logger_db.error(f'{chat_id}: "users_table" - find_one')
+            raise e
+
     def set_state(self, chat_id, state):
         try:
             self.state_table.update_one({'chat_id': chat_id}, {'$set': {'chat_id': chat_id, 'state': state}},

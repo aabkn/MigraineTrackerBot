@@ -11,7 +11,7 @@ logger = logging.getLogger('Server')
 
 
 @bot.message_handler(func=lambda message: (db.get_step(message.chat.id) == Steps.LANGUAGE) and
-                                          db.get_state(message.chat.id) == States.SETTINGS)
+                                           db.get_state(message.chat.id) == States.SETTINGS)
 def change_language(message):
     lang = None
     try:
@@ -60,6 +60,17 @@ def choose_settings(message):
             db.set_step(message.chat.id, Steps.NAME)
         elif message.text.capitalize() in ['Medications', 'Обезболивающие']:
             print_meds_list(message)
+        elif message.text.capitalize() in ['Skip buttons', 'Кнопки "пропустить"']:
+            if db.get_skip_preference(message.chat.id):
+                msg_to = bot.send_message(message.chat.id, messages.remove_skip_buttons[lang],
+                                          reply_markup=keyboards.remove_keyboard)
+                db.set_skip_preference(message.chat.id, False)
+                logger.info(info_message(message, msg_to))
+            else:
+                msg_to = bot.send_message(message.chat.id, messages.add_skip_buttons[lang],
+                                          reply_markup=keyboards.remove_keyboard)
+                db.set_skip_preference(message.chat.id, True)
+                logger.info(info_message(message, msg_to))
         else:
             msg_to = bot.send_message(message.chat.id, messages.not_option[lang])
             logger.info(info_message(message, msg_to))

@@ -40,7 +40,9 @@ def process_date(message):
         db.log_migraine(chat_id, {'chat_id': chat_id, 'date': attack_date})
         if db.get_state(chat_id) == States.LOGGING:
             db.set_step(chat_id, Steps.INTENSITY)
-            msg_to = bot.send_message(chat_id, messages.ask_intensity[lang], reply_markup=keyboards.intensity_keyboard)
+            skip = db.get_skip_preference(chat_id) and (db.get_state(chat_id) == States.LOGGING)
+            msg_to = bot.send_message(chat_id, messages.ask_intensity[lang],
+                                      reply_markup=keyboards.intensity_keyboard[lang][skip])
             logger.info(info_message(message, msg_to))
         else:
             db.set_step(chat_id, Steps.FINISH_LOG)
@@ -64,32 +66,40 @@ def process_intensity(message):
 
         logger.debug(debug_message(message))
         try:
-            intensity_val = float(intensity)
-            if intensity_val < 0:
-                msg_to = bot.reply_to(message, messages.neg_int[lang],
-                                      reply_markup=keyboards.intensity_keyboard)
-                logger.info(info_message(message, msg_to))
-                return
-            if intensity_val > 10:
-                msg_to = bot.reply_to(message, messages.too_big_intensity[lang],
-                                      reply_markup=keyboards.intensity_keyboard)
-                logger.info(info_message(message, msg_to))
-                return
+            if intensity not in keyboards.skip_row[lang]:  # SKIP or SKIP ALL
+                intensity_val = float(intensity)
+                if (intensity_val < 0) or (intensity_val > 10):
+                    skip = db.get_skip_preference(chat_id) and (db.get_state(chat_id) == States.LOGGING)
+                    if intensity_val < 0:
+                        msg_to = bot.reply_to(message, messages.neg_int[lang],
+                                              reply_markup=keyboards.intensity_keyboard[lang][skip])
+                    else:
+                        msg_to = bot.reply_to(message, messages.too_big_intensity[lang],
+                                              reply_markup=keyboards.intensity_keyboard[lang][skip])
+                    logger.info(info_message(message, msg_to))
+                    return
 
-            db.log_migraine(chat_id, {'chat_id': chat_id, 'intensity': intensity_val})
+                db.log_migraine(chat_id, {'chat_id': chat_id, 'intensity': intensity_val})
 
-            if db.get_state(chat_id) == States.LOGGING:
-                db.set_step(chat_id, Steps.LOCATION)
-                msg_to = bot.send_message(chat_id, messages.ask_location[lang],
-                                          reply_markup=keyboards.location_keyboard[lang])
-                logger.info(info_message(message, msg_to))
-            else:
+            if intensity != keyboards.skip_row[lang][1]:
+
+                if db.get_state(chat_id) == States.LOGGING:
+                    db.set_step(chat_id, Steps.LOCATION)
+                    skip = db.get_skip_preference(chat_id) and (db.get_state(chat_id) == States.LOGGING)
+                    msg_to = bot.send_message(chat_id, messages.ask_location[lang],
+                                              reply_markup=keyboards.location_keyboard[lang][skip])
+                    logger.info(info_message(message, msg_to))
+                else:  # EDIT
+                    db.set_step(chat_id, Steps.FINISH_LOG)
+                    print_current_log(chat_id)
+            else:  # SKIP ALL
                 db.set_step(chat_id, Steps.FINISH_LOG)
                 print_current_log(chat_id)
 
         except ValueError:
+            skip = db.get_skip_preference(chat_id) and (db.get_state(chat_id) == States.LOGGING)
             msg_to = bot.reply_to(message, messages.not_int_intensity[lang],
-                                  reply_markup=keyboards.intensity_keyboard)
+                                  reply_markup=keyboards.intensity_keyboard[lang][skip])
             logger.info(info_message(message, msg_to))
 
     except Exception as e:
@@ -109,17 +119,19 @@ def process_side(message):
         side = message.text
 
         logger.debug(debug_message(message))
-        if not (side.capitalize() in keyboards.location_buttons[lang]):
+        if not (side.capitalize() in keyboards.location_buttons[lang] + keyboards.skip_row[lang]):
             msg_to = bot.reply_to(message, messages.not_option[lang])
             logger.info(info_message(message, msg_to))
             return
 
-        db.log_migraine(chat_id, {'chat_id': chat_id, 'side': side})
+        if side not in keyboards.skip_row[lang]:
+            db.log_migraine(chat_id, {'chat_id': chat_id, 'side': side})
 
-        if db.get_state(chat_id) == States.LOGGING:
+        if (db.get_state(chat_id) == States.LOGGING) and (side != keyboards.skip_row[lang][1]):  # not(EDIT or SKIP ALL)
             db.set_step(chat_id, Steps.ATTACK_START)
+            skip = db.get_skip_preference(chat_id) and (db.get_state(chat_id) == States.LOGGING)
             msg_to = bot.reply_to(message, messages.ask_pain_start[lang],
-                                  reply_markup=keyboards.pain_start_keyboard[lang])
+                                  reply_markup=keyboards.pain_start_keyboard[lang][skip])
             logger.info(info_message(message, msg_to))
         else:
             db.set_step(chat_id, Steps.FINISH_LOG)
@@ -141,20 +153,23 @@ def process_pain_start(message):
         lang = db.get_lang(chat_id)
         pain_start = message.text
         logger.debug(debug_message(message))
-        if not (pain_start.capitalize() in keyboards.pain_start_buttons[lang]):
+        if not (pain_start.capitalize() in keyboards.pain_start_buttons[lang] + keyboards.skip_row[lang]):
             msg_to = bot.reply_to(message, messages.not_option[lang])
             logger.info(info_message(message, msg_to))
             return
 
-        attack_date = db.get_current_log(chat_id)['date']
-        db.log_migraine(chat_id, {'chat_id': chat_id, 'pain_start': pain_start,
-                                  'date': attack_date.replace(hour=attack_start_dict[pain_start.lower()])})
+        if pain_start not in keyboards.skip_row[lang]:
+            attack_date = db.get_current_log(chat_id)['date']
+            db.log_migraine(chat_id, {'chat_id': chat_id, 'pain_start': pain_start,
+                                      'date': attack_date.replace(hour=attack_start_dict[pain_start.lower()])})
 
-        if db.get_state(chat_id) == States.LOGGING:
+        if (db.get_state(chat_id) == States.LOGGING) and (pain_start != keyboards.skip_row[lang][1]):
             db.set_step(chat_id, Steps.MEDICATION)
             user_meds = db.get_meds(chat_id)
             meds_keyboard = keyboards.create_keyboard(user_meds)
             meds_keyboard.row(*keyboards.meds_keyboard_row[lang])
+            if db.get_skip_preference(chat_id) and (db.get_state(chat_id) == States.LOGGING):
+                meds_keyboard.row(keyboards.skip_row[lang][0])  # last question
             msg_to = bot.send_message(chat_id, messages.ask_medication[lang] +
                                       ('' if user_meds else messages.empty_meds_list[lang]),
                                       reply_markup=meds_keyboard,
@@ -184,7 +199,7 @@ def process_medication(message):
             msg_to = bot.reply_to(message, messages.not_medication[lang])
             logger.info(info_message(message, msg_to))
             return
-        if message.text == keyboards.meds_keyboard_row[lang][1]:
+        if message.text == keyboards.meds_keyboard_row[lang][1]:  # ADD MULTIPLE
             user_meds = db.get_meds(chat_id)
             meds_keyboard = keyboards.create_keyboard(user_meds)
             msg_to = bot.send_message(chat_id, messages.ask_multiple_medication[lang], reply_markup=meds_keyboard)
@@ -192,7 +207,8 @@ def process_medication(message):
             db.log_migraine(chat_id, {'medication': ""})
             db.set_step(chat_id, Steps.MEDICATION_MULTIPLE)
             return
-        db.log_migraine(chat_id, {'chat_id': chat_id, 'medication': message.text})
+        if message.text != keyboards.skip_row[lang][0]:
+            db.log_migraine(chat_id, {'chat_id': chat_id, 'medication': message.text})
         db.set_step(chat_id, Steps.FINISH_LOG)
         print_current_log(chat_id)
 
@@ -216,9 +232,7 @@ def process_multiple_medication(message):
             logger.info(info_message(message, msg_to))
             return
 
-        if message.text in keyboards.meds_keyboard_multiple_row[lang]:
-            taken_meds_list = db.get_current_log(chat_id)['medication']
-            # db.log_migraine(chat_id, {'medication': ', '.join(taken_meds_list)})
+        if message.text in keyboards.meds_keyboard_multiple_row[lang]:  # DONE
             db.set_step(chat_id, Steps.FINISH_LOG)
             print_current_log(chat_id)
         else:
@@ -227,6 +241,8 @@ def process_multiple_medication(message):
             user_meds = db.get_meds(chat_id)
             meds_keyboard = keyboards.create_keyboard(user_meds)
             meds_keyboard.row(keyboards.meds_keyboard_multiple_row[lang])
+            if db.get_skip_preference(chat_id) and (db.get_state(chat_id) == States.LOGGING):
+                meds_keyboard.row(*keyboards.skip_row[lang])
             msg_to = bot.send_message(chat_id, messages.ask_next_medication[lang],
                                       reply_markup=meds_keyboard)
             logger.info(info_message(message, msg_to))

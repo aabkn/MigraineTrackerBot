@@ -194,11 +194,11 @@ def start_edit(message):
                 msg_to = bot.send_message(chat_id, messages.edit_start_log[lang])
             elif step == Steps.ATTACK_START:
                 msg_to = bot.send_message(chat_id, messages.edit_location[lang],
-                                          reply_markup=keyboards.location_keyboard[lang])
+                                          reply_markup=keyboards.location_keyboard[lang][False])
                 db.set_step(chat_id, Steps.LOCATION)
             elif step == Steps.LOCATION:
                 msg_to = bot.send_message(chat_id, messages.edit_intensity[lang],
-                                          reply_markup=keyboards.intensity_keyboard)
+                                          reply_markup=keyboards.intensity_keyboard[lang][False])
                 db.set_step(chat_id, Steps.INTENSITY)
             elif step == Steps.INTENSITY:
                 date_keyboard = keyboards.create_keyboard(
@@ -208,7 +208,7 @@ def start_edit(message):
                 db.set_step(chat_id, Steps.DATE)
             elif step == Steps.MEDICATION:
                 msg_to = bot.send_message(chat_id, messages.edit_pain_start[lang],
-                                          reply_markup=keyboards.pain_start_keyboard[lang])
+                                          reply_markup=keyboards.pain_start_keyboard[lang][False])
                 db.set_step(chat_id, Steps.ATTACK_START)
         elif step == Steps.FINISH_LOG:
             db.set_state(chat_id, States.EDITING)
